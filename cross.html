@@ -1,0 +1,3518 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Our Island — Year 3</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			/* ════════════════════════════════════════════════════════════════
+   HOW TO USE THIS PAGE
+   ────────────────────────────────────────────────────────────────
+   Scroll to the SETTINGS object below to edit names, love notes,
+   critters/fossils, and NPC lines.
+
+   CONTROLS
+   Arrow keys / WASD — walk (or the on-screen pad on touch devices)
+   1 / 2 / 3 — switch tool (Net / Rod / Shovel), or tap the icons
+   Space (or the ✨ button) — use equipped tool
+   Walk into a glowing letter to open it.
+   Walk onto the Museum or a house door to go inside; walk onto the
+   exit mat near the bottom of a room to come back out.
+   There are TWO bridges across the river — wide and easy to spot.
+══════════════════════════════════════════════════════════════════ */
+
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--cream: #fff8ef;
+				--pink: #ff9eb8;
+				--pink-dark: #f06d92;
+				--leaf: #4caf7d;
+				--leaf-dark: #3a8a62;
+				--ink: #4a3b32;
+				--font-head: "Baloo 2", sans-serif;
+				--font-body: "Quicksand", sans-serif;
+			}
+			html,
+			body {
+				height: 100%;
+			}
+			body {
+				margin: 0;
+				font-family: var(--font-body);
+				color: var(--ink);
+				background: linear-gradient(
+					180deg,
+					#cdeefd 0%,
+					#fef6e4 60%,
+					#fff8ef 100%
+				);
+				min-height: 100vh;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 1.25rem 0.75rem 2rem;
+				overflow-x: hidden;
+			}
+			h1,
+			h2,
+			h3 {
+				font-family: var(--font-head);
+			}
+			.page-title {
+				font-size: clamp(1.4rem, 4vw, 2.2rem);
+				color: var(--pink-dark);
+				text-align: center;
+				margin-bottom: 0.3rem;
+				text-shadow: 0 2px 0 #fff;
+			}
+			.page-sub {
+				font-size: 0.88rem;
+				color: #8a7a6e;
+				text-align: center;
+				margin-bottom: 1rem;
+				max-width: 540px;
+			}
+
+			#game-frame {
+				position: relative;
+				width: 100%;
+				max-width: 960px;
+				border-radius: 18px;
+				overflow: hidden;
+				box-shadow: 0 16px 40px rgba(120, 90, 60, 0.25);
+				border: 6px solid #fff;
+				background: #bfe7c0;
+			}
+			#game-canvas {
+				width: 100%;
+				display: block;
+				aspect-ratio: 960 / 640;
+				cursor: pointer;
+			}
+
+			#hud-top {
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				right: 10px;
+				display: flex;
+				align-items: flex-start;
+				justify-content: space-between;
+				gap: 0.4rem;
+				pointer-events: none;
+				flex-wrap: wrap;
+			}
+			.hud-pill {
+				background: rgba(255, 255, 255, 0.9);
+				border-radius: 999px;
+				padding: 0.35rem 0.8rem;
+				font-family: var(--font-head);
+				font-size: 0.78rem;
+				color: var(--ink);
+				box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+				pointer-events: auto;
+				white-space: nowrap;
+			}
+			#hud-count {
+				color: var(--pink-dark);
+			}
+			.hud-stack {
+				display: flex;
+				flex-direction: column;
+				gap: 0.3rem;
+				align-items: flex-start;
+			}
+			.hud-row {
+				display: flex;
+				gap: 0.3rem;
+				flex-wrap: wrap;
+			}
+			.hud-btn {
+				background: rgba(255, 255, 255, 0.92);
+				border: none;
+				border-radius: 999px;
+				padding: 0.35rem 0.8rem;
+				font-family: var(--font-head);
+				font-size: 0.78rem;
+				color: var(--leaf-dark);
+				cursor: pointer;
+				box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+				pointer-events: auto;
+				transition: transform 0.15s;
+				white-space: nowrap;
+			}
+			.hud-btn:hover {
+				transform: scale(1.05);
+			}
+
+			#minimap-wrap {
+				position: absolute;
+				top: var(--minimap-top, 96px);
+				right: 10px;
+				width: 130px;
+				height: 92px;
+				background: rgba(255, 255, 255, 0.85);
+				border-radius: 10px;
+				box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+				padding: 4px;
+				pointer-events: none;
+				display: none;
+				transition: top 0.15s;
+			}
+			#minimap-wrap.show {
+				display: block;
+			}
+			#minimap {
+				width: 100%;
+				height: 100%;
+				border-radius: 7px;
+				display: block;
+			}
+
+			#tool-dock {
+				position: absolute;
+				bottom: 16px;
+				right: 16px;
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				align-items: center;
+			}
+			.tool-btn {
+				width: 46px;
+				height: 46px;
+				border-radius: 12px;
+				background: rgba(255, 255, 255, 0.85);
+				border: 3px solid transparent;
+				font-size: 1.3rem;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+				transition: transform 0.15s;
+			}
+			.tool-btn.active {
+				border-color: var(--pink-dark);
+				background: #fff;
+				transform: scale(1.08);
+			}
+			#action-btn {
+				width: 58px;
+				height: 58px;
+				border-radius: 50%;
+				background: var(--pink);
+				color: #fff;
+				border: none;
+				font-size: 1.3rem;
+				cursor: pointer;
+				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+				margin-top: 4px;
+				transition: transform 0.1s;
+			}
+			#action-btn:active {
+				transform: scale(0.9);
+			}
+
+			#dpad {
+				position: absolute;
+				bottom: 16px;
+				left: 16px;
+				width: 130px;
+				height: 130px;
+				display: grid;
+				grid-template-columns: 40px 40px 40px;
+				grid-template-rows: 40px 40px 40px;
+				gap: 4px;
+				opacity: 0.85;
+			}
+			.dpad-btn {
+				background: rgba(255, 255, 255, 0.8);
+				border: none;
+				border-radius: 10px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--ink);
+				font-size: 1.1rem;
+				user-select: none;
+				touch-action: none;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+			}
+			.dpad-btn:active {
+				background: var(--pink);
+				color: #fff;
+			}
+			#dpad-up {
+				grid-column: 2;
+				grid-row: 1;
+			}
+			#dpad-left {
+				grid-column: 1;
+				grid-row: 2;
+			}
+			#dpad-right {
+				grid-column: 3;
+				grid-row: 2;
+			}
+			#dpad-down {
+				grid-column: 2;
+				grid-row: 3;
+			}
+
+			#toast-layer {
+				position: absolute;
+				top: 64px;
+				left: 0;
+				right: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 6px;
+				pointer-events: none;
+				z-index: 5;
+			}
+			.toast {
+				background: rgba(255, 255, 255, 0.95);
+				border-radius: 999px;
+				padding: 0.4rem 1rem;
+				font-family: var(--font-head);
+				font-size: 0.85rem;
+				color: var(--ink);
+				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+				animation: toastPop 1.8s ease forwards;
+			}
+			@keyframes toastPop {
+				0% {
+					opacity: 0;
+					transform: translateY(-8px) scale(0.9);
+				}
+				15% {
+					opacity: 1;
+					transform: translateY(0) scale(1);
+				}
+				80% {
+					opacity: 1;
+				}
+				100% {
+					opacity: 0;
+					transform: translateY(-6px) scale(0.95);
+				}
+			}
+
+			#npc-bubble {
+				position: absolute;
+				display: none;
+				background: #fff;
+				border-radius: 12px;
+				padding: 0.5rem 0.8rem;
+				font-size: 0.82rem;
+				max-width: 200px;
+				box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+				z-index: 6;
+				transform: translate(-50%, -100%);
+			}
+			#npc-bubble::after {
+				content: "";
+				position: absolute;
+				bottom: -8px;
+				left: 50%;
+				transform: translateX(-50%);
+				border-width: 8px 7px 0;
+				border-style: solid;
+				border-color: #fff transparent transparent transparent;
+			}
+
+			.overlay {
+				position: absolute;
+				inset: 0;
+				background: rgba(74, 59, 50, 0.4);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.25s,
+					visibility 0.25s;
+				padding: 1rem;
+				z-index: 8;
+			}
+			.overlay.show {
+				opacity: 1;
+				visibility: visible;
+			}
+			.card {
+				background: var(--cream);
+				border-radius: 16px;
+				padding: 1.5rem 1.6rem 1.3rem;
+				max-width: 440px;
+				width: 100%;
+				max-height: 85%;
+				overflow-y: auto;
+				box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+				transform: scale(0.85) translateY(20px);
+				transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				text-align: center;
+			}
+			.overlay.show .card {
+				transform: scale(1) translateY(0);
+			}
+			.letter-card {
+				border: 3px dashed var(--pink);
+			}
+			.letter-icon {
+				font-size: 2rem;
+				margin-bottom: 0.4rem;
+			}
+			.letter-text {
+				font-size: 1.02rem;
+				line-height: 1.6;
+				color: var(--ink);
+				margin-bottom: 1.1rem;
+			}
+
+			.btn {
+				border: none;
+				border-radius: 999px;
+				padding: 0.5rem 1.4rem;
+				font-family: var(--font-head);
+				font-size: 0.95rem;
+				cursor: pointer;
+				transition:
+					background 0.15s,
+					transform 0.15s;
+				color: #fff;
+			}
+			.btn:hover {
+				transform: scale(1.05);
+			}
+			.btn-pink {
+				background: var(--pink);
+			}
+			.btn-pink:hover {
+				background: var(--pink-dark);
+			}
+			.btn-leaf {
+				background: var(--leaf);
+			}
+			.btn-leaf:hover {
+				background: var(--leaf-dark);
+			}
+
+			.book-title {
+				font-size: 1.2rem;
+				color: var(--pink-dark);
+				margin-bottom: 0.7rem;
+				text-align: center;
+			}
+			.book-entry {
+				background: #fff;
+				border-radius: 10px;
+				padding: 0.6rem 0.8rem;
+				margin-bottom: 0.5rem;
+				font-size: 0.88rem;
+				line-height: 1.5;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+				text-align: left;
+			}
+			.book-entry.locked {
+				color: #b4a89c;
+				font-style: italic;
+			}
+
+			.museum-section-title {
+				font-size: 0.95rem;
+				font-weight: 700;
+				color: var(--leaf-dark);
+				margin: 0.8rem 0 0.4rem;
+				text-align: left;
+			}
+			.museum-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 0.45rem;
+			}
+			.museum-item {
+				background: #fff;
+				border-radius: 10px;
+				padding: 0.5rem 0.3rem;
+				font-size: 0.72rem;
+				text-align: center;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+			}
+			.museum-item.locked {
+				color: #c5b9ad;
+			}
+			.museum-item .emoji {
+				font-size: 1.3rem;
+				display: block;
+			}
+
+			#hud-bells {
+				color: #c98a1f;
+			}
+			.shop-tabs {
+				display: flex;
+				gap: 0.4rem;
+				justify-content: center;
+				margin-bottom: 0.8rem;
+				flex-wrap: wrap;
+			}
+			.shop-tab {
+				border: none;
+				background: #f1e6d4;
+				color: var(--ink);
+				font-family: var(--font-head);
+				font-size: 0.82rem;
+				padding: 0.4rem 0.9rem;
+				border-radius: 999px;
+				cursor: pointer;
+				transition: background 0.15s, transform 0.15s;
+			}
+			.shop-tab:hover {
+				transform: scale(1.04);
+			}
+			.shop-tab.active {
+				background: var(--leaf);
+				color: #fff;
+			}
+			.shop-balance {
+				font-family: var(--font-head);
+				font-size: 1rem;
+				color: #c98a1f;
+				margin-bottom: 0.7rem;
+			}
+			.shop-grid {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 0.55rem;
+				margin-bottom: 0.6rem;
+			}
+			.shop-item {
+				background: #fff;
+				border: 2px solid transparent;
+				border-radius: 12px;
+				padding: 0.5rem 0.3rem 0.45rem;
+				text-align: center;
+				cursor: pointer;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+				transition: transform 0.12s, border-color 0.12s;
+				font-family: var(--font-body);
+			}
+			.shop-item:hover {
+				transform: translateY(-2px) scale(1.03);
+			}
+			.shop-item.owned {
+				border-color: var(--leaf);
+			}
+			.shop-item.equipped {
+				border-color: var(--pink-dark);
+				background: #fff3f7;
+			}
+			.shop-item .swatch {
+				width: 30px;
+				height: 30px;
+				border-radius: 50%;
+				margin: 0 auto 0.3rem;
+				border: 2px solid rgba(0, 0, 0, 0.08);
+			}
+			.shop-item .hat-emoji {
+				font-size: 1.6rem;
+				display: block;
+				margin-bottom: 0.15rem;
+			}
+			.shop-item .item-name {
+				display: block;
+				font-size: 0.7rem;
+				font-weight: 600;
+				color: var(--ink);
+				margin-bottom: 0.15rem;
+			}
+			.shop-item .item-price {
+				display: block;
+				font-size: 0.68rem;
+				color: #c98a1f;
+				font-family: var(--font-head);
+			}
+			.shop-item .item-tag {
+				display: block;
+				font-size: 0.62rem;
+				color: var(--leaf-dark);
+				font-weight: 700;
+			}
+			.shopkeeper-row {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				background: #fbf2e3;
+				border-radius: 12px;
+				padding: 0.55rem 0.7rem;
+				margin-bottom: 0.9rem;
+				text-align: left;
+			}
+			.shopkeeper-row .face {
+				font-size: 1.8rem;
+				flex-shrink: 0;
+			}
+			.shopkeeper-row .line {
+				font-size: 0.82rem;
+				line-height: 1.4;
+				color: var(--ink);
+			}
+			.bulletin-card {
+				border: 3px solid #caa97a;
+			}
+			.bulletin-pin {
+				background: #fffdf6;
+				border-radius: 10px;
+				padding: 0.6rem 0.8rem;
+				margin-bottom: 0.55rem;
+				font-size: 0.85rem;
+				line-height: 1.5;
+				text-align: left;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+				border-left: 4px solid var(--pink);
+				position: relative;
+			}
+			.bulletin-pin::before {
+				content: "📌";
+				position: absolute;
+				top: -8px;
+				left: -8px;
+				font-size: 0.9rem;
+			}
+
+			.celebrate-title {
+				font-size: clamp(1.5rem, 5vw, 2.1rem);
+				color: var(--pink-dark);
+				margin-bottom: 0.6rem;
+			}
+			.celebrate-text {
+				font-size: 1rem;
+				line-height: 1.6;
+				color: var(--ink);
+				margin-bottom: 1.2rem;
+			}
+			#confetti-canvas {
+				position: absolute;
+				inset: 0;
+				pointer-events: none;
+				z-index: 11;
+			}
+
+			.footer-note {
+				margin-top: 1rem;
+				font-size: 0.78rem;
+				color: #a0907f;
+				text-align: center;
+				max-width: 600px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 class="page-title" id="page-title">Our Island — Year 3</h1>
+		<p class="page-sub">
+			Explore the whole town, visit your neighbors, cross the bridges, and
+			find every hidden letter 💌 along the way. Earn Bells by fishing,
+			bug-catching, digging up fossils, and picking fruit — then spend them
+			at the shop on Maple's Mercantile!
+		</p>
+
+		<div id="game-frame">
+			<canvas id="game-canvas" width="960" height="640"></canvas>
+
+			<div id="hud-top">
+				<div class="hud-stack">
+					<div class="hud-pill" id="hud-bells">🔔 <span id="hud-bells-amt">0</span></div>
+					<div class="hud-pill"><span id="hud-count">💌 0/0</span></div>
+					<div class="hud-row">
+						<div class="hud-pill" id="hud-fish">🐟 0/0</div>
+						<div class="hud-pill" id="hud-bugs">🦋 0/0</div>
+						<div class="hud-pill" id="hud-fossils">🦴 0/0</div>
+						<div class="hud-pill" id="hud-fruit">🍎 0/0</div>
+					</div>
+				</div>
+				<div class="hud-stack" style="align-items: flex-end">
+					<div class="hud-row">
+						<button class="hud-btn" id="shop-btn">🛍️ Shop</button>
+						<button class="hud-btn" id="book-btn">📖 Memory Book</button>
+					</div>
+					<div class="hud-row">
+						<button class="hud-btn" id="museum-btn">🏛️ Museum</button>
+						<button class="hud-btn" id="bulletin-btn">📋 Notices</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="minimap-wrap">
+				<canvas id="minimap" width="260" height="184"></canvas>
+			</div>
+
+			<div id="toast-layer"></div>
+			<div id="npc-bubble"></div>
+
+			<div id="dpad">
+				<button class="dpad-btn" id="dpad-up">▲</button>
+				<button class="dpad-btn" id="dpad-left">◀</button>
+				<button class="dpad-btn" id="dpad-right">▶</button>
+				<button class="dpad-btn" id="dpad-down">▼</button>
+			</div>
+
+			<div id="tool-dock">
+				<button class="tool-btn" id="tool-net" title="Net (1)">🥅</button>
+				<button class="tool-btn" id="tool-rod" title="Fishing Rod (2)">
+					🎣
+				</button>
+				<button class="tool-btn" id="tool-shovel" title="Shovel (3)">⛏️</button>
+				<button class="tool-btn" id="tool-hand" title="Pick fruit (4)">✋</button>
+				<button id="action-btn" title="Use tool (Space)">✨</button>
+			</div>
+
+			<div class="overlay" id="letter-overlay">
+				<div class="card letter-card">
+					<div class="letter-icon">💌</div>
+					<div class="letter-text" id="letter-text"></div>
+					<button class="btn btn-pink" id="letter-close">Aww, close</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="book-overlay">
+				<div class="card">
+					<h2 class="book-title">Memory Book</h2>
+					<div id="book-list"></div>
+					<button
+						class="btn btn-leaf"
+						id="book-close"
+						style="margin-top: 0.6rem"
+					>
+						Close
+					</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="museum-overlay">
+				<div class="card">
+					<h2 class="book-title">🏛️ Museum Collection</h2>
+					<div class="museum-section-title">Fish</div>
+					<div class="museum-grid" id="museum-fish"></div>
+					<div class="museum-section-title">Bugs</div>
+					<div class="museum-grid" id="museum-bugs"></div>
+					<div class="museum-section-title">Fossils</div>
+					<div class="museum-grid" id="museum-fossils"></div>
+					<div class="museum-section-title">Fruit</div>
+					<div class="museum-grid" id="museum-fruit"></div>
+					<button
+						class="btn btn-leaf"
+						id="museum-close"
+						style="margin-top: 0.9rem"
+					>
+						Close
+					</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="shop-overlay">
+				<div class="card">
+					<h2 class="book-title" id="shop-title">🛍️ Maple's Mercantile</h2>
+					<div class="shopkeeper-row">
+						<div class="face">🦝</div>
+						<div class="line" id="shop-line">
+							Welcome, welcome! Bells make the world go round out here —
+							spend a few on something cute, why don't you?
+						</div>
+					</div>
+					<div class="shop-balance">🔔 You have <span id="shop-balance">0</span> Bells</div>
+					<div class="shop-tabs">
+						<button class="shop-tab active" id="shop-tab-outfits" data-tab="outfits">
+							👚 Outfit Colors
+						</button>
+						<button class="shop-tab" id="shop-tab-hats" data-tab="hats">
+							🎀 Cute Hats
+						</button>
+					</div>
+					<div class="shop-grid" id="shop-grid"></div>
+					<button
+						class="btn btn-leaf"
+						id="shop-close"
+						style="margin-top: 0.3rem"
+					>
+						Thanks, Maple!
+					</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="bulletin-overlay">
+				<div class="card bulletin-card">
+					<h2 class="book-title">📋 Town Bulletin Board</h2>
+					<div id="bulletin-list"></div>
+					<button
+						class="btn btn-leaf"
+						id="bulletin-close"
+						style="margin-top: 0.6rem"
+					>
+						Close
+					</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="villager-overlay">
+				<div class="card villager-card">
+					<div class="letter-icon" id="villager-emoji">🐻</div>
+					<h3 style="font-family: var(--font-head); color: var(--leaf-dark); margin-bottom: 0.4rem" id="villager-name"></h3>
+					<div class="letter-text" id="villager-text"></div>
+					<button class="btn btn-pink" id="villager-close">See you later!</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="sign-overlay">
+				<div class="card">
+					<div class="letter-icon">🪧</div>
+					<h3 style="font-family: var(--font-head); color: var(--leaf-dark); margin-bottom: 0.4rem" id="sign-title">Welcome!</h3>
+					<div class="letter-text" id="sign-text"></div>
+					<button class="btn btn-pink" id="sign-close">Thanks!</button>
+				</div>
+			</div>
+
+			<div class="overlay" id="celebrate-overlay" style="z-index: 12">
+				<canvas id="confetti-canvas"></canvas>
+				<div class="card" style="border: none">
+					<h2 class="celebrate-title" id="celebrate-title">
+						Happy 3rd Anniversary! 🎉
+					</h2>
+					<p class="celebrate-text" id="celebrate-text"></p>
+					<button class="btn btn-pink" id="celebrate-restart">
+						Explore Again
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<p class="footer-note">
+			Arrow keys / WASD to walk, 1 / 2 / 3 to switch tools, Space to use your
+			tool, 4 to pick fruit by hand — or use the on-screen pad and buttons on
+			touch devices. Tap outside any popup to close it.
+		</p>
+
+		<script>
+			/* ═══════════════════════════════════════════════════════════════════
+   ▸  SETTINGS
+═══════════════════════════════════════════════════════════════════ */
+			const SETTINGS = {
+				partner1: "Avni",
+				partner2: "Rana",
+				anniversaryLabel: "3 Years Together",
+				playerColor: "#ff9eb8",
+				finalMessage:
+					"Three years in, and every single one of these is still true. Here's to every year after this one. I love you. ❤️",
+
+				notes: [
+					"I love how you remember the little things — the songs, the inside jokes, the silly little moments — and bring them up just to make me smile.",
+					"You make ordinary days feel like an adventure, even if it's just a walk in the park.",
+					"I appreciate how patient you are with me, even on my worst days.",
+					"Your laugh is honestly one of my favorite sounds in the world.",
+					"Thank you for always being someone I can be completely myself around.",
+					"I love how we can go from deep conversations to complete nonsense in the same five minutes.",
+					"You make me want to be a better version of myself, every single day.",
+					"I'm so grateful for every road trip, every late-night drive, every random plan that turned into a memory.",
+					"You have the biggest heart, and I've watched you take care of everyone around you without ever asking for anything back.",
+					"I love that home, to me, isn't a place — it's wherever you are.",
+					"Thank you for three years of choosing me, again and again.",
+					"Here's to forever starting right now. I love you more than these letters could ever say.",
+				],
+
+				fishSpecies: [
+					{ name: "Sunfish", emoji: "🐟" },
+					{ name: "Glimmer Trout", emoji: "🐠" },
+					{ name: "Bubble Carp", emoji: "🐡" },
+					{ name: "Star Guppy", emoji: "🐟" },
+					{ name: "Moonlight Eel", emoji: "🐍" },
+					{ name: "Pond Jewel", emoji: "🐠" },
+					{ name: "Saltwater Glint", emoji: "🐟" },
+				],
+				bugSpecies: [
+					{ name: "Paper Butterfly", emoji: "🦋" },
+					{ name: "Glass Dragonfly", emoji: "🦟" },
+					{ name: "Honey Bee", emoji: "🐝" },
+					{ name: "Lantern Firefly", emoji: "✨" },
+				],
+				fossilSpecies: [
+					{ name: "Ancient Clamshell", emoji: "🦪" },
+					{ name: "Mossy Trilobite", emoji: "🦴" },
+					{ name: "Crystal Ammonite", emoji: "🐚" },
+					{ name: "Petrified Leaf", emoji: "🍃" },
+					{ name: "Tiny Whale Bone", emoji: "🦴" },
+					{ name: "Dino Toe Bone", emoji: "🦖" },
+				],
+				fruitSpecies: [
+					{ name: "Apple", emoji: "🍎" },
+					{ name: "Peach", emoji: "🍑" },
+					{ name: "Pear", emoji: "🍐" },
+					{ name: "Orange", emoji: "🍊" },
+				],
+				npcLines: [
+					"Happy anniversary, you two! Three years already — time flies.",
+					"I heard there are letters hidden all over town. Have you found them all?",
+					"Try fishing off the beach, not just the pond — different fish bite out there!",
+					"I noticed some loose dirt mounds around town... might be worth digging.",
+					"There are two bridges across the river now — much easier to get around!",
+					"Come visit the museum any time to see everything you've collected!",
+					"Don't forget you can walk right into the houses — just step up to a door.",
+					"Maple's Mercantile is open in the town center if you want to spend your Bells!",
+				],
+
+				/* Bells earned per catch / dig / pick */
+				bellValues: {
+					fish: [80, 150],
+					bug: [60, 120],
+					fossil: [200, 400],
+					fruit: [25, 45],
+				},
+
+				/* Original villager neighbors, each with their own personality */
+				villagers: [
+					{
+						name: "Bramble",
+						species: "🐻",
+						color: "#caa97a",
+						roofColor: "#caa97a",
+						personality: "lazy",
+						lines: [
+							"Ohh, hey there. I was just about to take a nap right here in the grass. Wanna join?",
+							"You ever just... sit somewhere and think about snacks? No? Just me?",
+							"I heard the fish are extra biting today. Not that I'd know — too cozy to fish.",
+							"Thanks for stopping by. You've got good vibes. Very nap-friendly energy.",
+						],
+					},
+					{
+						name: "Sable",
+						species: "🐰",
+						color: "#e7c8d6",
+						roofColor: "#b27ad1",
+						personality: "snooty",
+						lines: [
+							"Oh. It's you. I suppose your outfit is... acceptable today.",
+							"I redecorated my whole house this week. Obviously you wouldn't notice the difference, but I did.",
+							"Have you been to the shop lately? Some of us like to stay fashionable, unlike certain townsfolk.",
+							"I'll admit it — having you around does make the town feel a little less dull.",
+						],
+					},
+					{
+						name: "Finch",
+						species: "🐦",
+						color: "#a6d8ff",
+						roofColor: "#5d8acb",
+						personality: "peppy",
+						lines: [
+							"Hiii!! Oh my gosh, I love your hat — wait, did you just get that from the shop?!",
+							"Today is going to be AMAZING, I can just feel it!!",
+							"I was singing earlier and a duck started singing back. We're basically besties now.",
+							"You're literally my favorite person on this whole island, just so you know!",
+						],
+					},
+					{
+						name: "Otto",
+						species: "🦦",
+						color: "#8fb8a8",
+						roofColor: "#3a8a62",
+						personality: "jock",
+						lines: [
+							"Hey hey! You been keeping active? Gotta stay sharp, both body AND brain!",
+							"I did 50 laps around the well this morning. You should try it — great cardio.",
+							"Catch anything good today? I bet I could out-fish you. Just saying. Friendly competition!",
+							"Solid hustle out there. Keep it up, champ!",
+						],
+					},
+				],
+
+				/* Tom Nook-style shopkeeper at Maple's Mercantile */
+				shopkeeper: {
+					name: "Maple",
+					greeting:
+						"Welcome, welcome! Bells make the world go round out here — spend a few on something cute, why don't you?",
+					lowFundsLine:
+						"Ho ho, a fine choice — but it looks like your purse is feeling a bit light for that one!",
+					boughtLines: [
+						"A wonderful choice, if I may say so myself!",
+						"Yessiree, that'll look great on you!",
+						"Pleasure doing business, as always!",
+						"Ohh, excellent taste. Truly excellent.",
+					],
+				},
+				outfitColors: [
+					{ id: "pink", name: "Berry Pink", hex: "#ff9eb8", price: 0 },
+					{ id: "leaf", name: "Leaf Green", hex: "#7bcf8e", price: 150 },
+					{ id: "sky", name: "Sky Blue", hex: "#7fc4ec", price: 150 },
+					{ id: "sun", name: "Sunshine Yellow", hex: "#ffd76a", price: 150 },
+					{ id: "lav", name: "Lavender", hex: "#c6a6e0", price: 220 },
+					{ id: "coral", name: "Coral Orange", hex: "#ff9b6a", price: 220 },
+					{ id: "mint", name: "Minty Teal", hex: "#7fe0c8", price: 220 },
+					{ id: "plum", name: "Deep Plum", hex: "#9a5fa0", price: 320 },
+				],
+				hats: [
+					{ id: "none", name: "No Hat", emoji: "🚫", price: 0 },
+					{ id: "straw", name: "Straw Hat", emoji: "👒", price: 180 },
+					{ id: "bow", name: "Cute Bow", emoji: "🎀", price: 200 },
+					{ id: "flower", name: "Flower Crown", emoji: "🌸", price: 260 },
+					{ id: "cap", name: "Sporty Cap", emoji: "🧢", price: 220 },
+					{ id: "crown", name: "Tiny Crown", emoji: "👑", price: 420 },
+					{ id: "party", name: "Party Hat", emoji: "🎉", price: 240 },
+					{ id: "beanie", name: "Cozy Beanie", emoji: "🍦", price: 200 },
+				],
+
+				/* Town welcome sign */
+				welcomeSignTitle: "Welcome to the Island!",
+				welcomeSignText:
+					"Population: 2 (and growing) 🏝️ Fish off the beach or pond, catch bugs with your net, dig up fossils, and pick fruit from the orchard for Bells. Spend them at Maple's Mercantile on cute outfits and hats. Don't forget to check the bulletin board in the town center!",
+
+				/* Bulletin board notices */
+				bulletinNotices: [
+					"🛍️ Maple's Mercantile is fully stocked — new hat shipment just arrived!",
+					"🎣 Fishing Derby rumor: bigger fish seem to bite near the dock at the ocean.",
+					"🌳 Fruit trees regrow a little while after you pick them — be patient!",
+					"🏛️ Don't forget to visit the Museum to see your full collection on display.",
+					"💌 Word around town is there are love letters hidden all over — happy hunting!",
+				],
+			};
+			/* ═══════════════════════════════════════════════════════════════ */
+
+			document.getElementById("page-title").textContent =
+				SETTINGS.partner1 + " & " + SETTINGS.partner2 + "'s Island";
+			document.getElementById("celebrate-title").textContent =
+				"Happy " + SETTINGS.anniversaryLabel + "! 🎉";
+			document.getElementById("celebrate-text").textContent =
+				SETTINGS.finalMessage;
+
+			/* ── World & camera ───────────────────────────────────────────── */
+			const canvas = document.getElementById("game-canvas");
+			const ctx = canvas.getContext("2d");
+			const VIEW_W = 960,
+				VIEW_H = 640;
+			const WORLD_W = 2240,
+				WORLD_H = 1420;
+			const camera = { x: 0, y: 0 };
+
+			/* ── Geography ────────────────────────────────────────────────── */
+			const POND = { x: 300, y: 300, rx: 120, ry: 75 };
+			const RIVER = { x: 1080, y: 0, w: 64, h: 1360 };
+			// Two wide, generous bridges so crossing is always easy to find,
+			// placed in open stretches with nothing else nearby.
+			const BRIDGES = [
+				{ x: 1080, y: 460, w: 64, h: 200 },
+				{ x: 1080, y: 980, w: 64, h: 170 },
+			];
+			const OCEAN_Y = 1380,
+				BEACH_Y = 1320;
+			const DOCK = { x: 560, y: OCEAN_Y - 14, w: 70, h: 90 }; // walkable dock over the ocean
+
+			/* ── TOWN CENTER ──────────────────────────────────────────────
+			   A proper plaza with the well in the middle, Maple's shop
+			   set back on one side, and the bulletin board + welcome sign
+			   each given their own clear footing well apart from it all. */
+			const PLAZA = { x: 1650, y: 300, r: 110 };
+			const WELL = { x: 1650, y: 300, r: 16 };
+			const SHOP = { x: 1430, y: 110, w: 116, h: 86, roof: "#d65f5f" };
+			const SHOP_DOOR = {
+				x: SHOP.x + SHOP.w / 2 - 12,
+				y: SHOP.y + SHOP.h - 12,
+				w: 24,
+				h: 18,
+			};
+			const BULLETIN = { x: 1860, y: 220 };
+			const WELCOME_SIGN = { x: 1650, y: 110 };
+
+			const MUSEUM = { x: 1820, y: 1060, w: 160, h: 124 };
+			const MUSEUM_DOOR = {
+				x: MUSEUM.x + 58,
+				y: MUSEUM.y + MUSEUM.h - 14,
+				w: 40,
+				h: 22,
+			};
+			const NPC = { x: MUSEUM.x - 60, y: MUSEUM.y + MUSEUM.h - 20 };
+
+			/* ── RESIDENTIAL NEIGHBORHOOD ─────────────────────────────────
+			   A tidy lane south of the town center: player houses on one
+			   street, each villager's own home on the next — both rows
+			   spaced generously so the area never feels cramped. */
+			const HOUSES = [
+				{ x: 1380, y: 560, w: 88, h: 72, roof: "#5d8acb", theme: 0, label: "Your House" },
+				{ x: 1620, y: 560, w: 88, h: 72, roof: "#e0a04a", theme: 1, label: "Guest House" },
+				{ x: 1860, y: 560, w: 88, h: 72, roof: "#b27ad1", theme: 2, label: "Cottage" },
+			].map((h) => ({
+				...h,
+				door: { x: h.x + h.w / 2 - 10, y: h.y + h.h - 12, w: 20, h: 18 },
+			}));
+
+			const VILLAGER_HOUSES = [
+				{ x: 1280, y: 800, w: 76, h: 62, roof: "#caa97a" },
+				{ x: 1500, y: 800, w: 76, h: 62, roof: "#b27ad1" },
+				{ x: 1720, y: 800, w: 76, h: 62, roof: "#5d8acb" },
+				{ x: 1940, y: 800, w: 76, h: 62, roof: "#3a8a62" },
+			].map((h) => ({
+				...h,
+				door: { x: h.x + h.w / 2 - 9, y: h.y + h.h - 10, w: 18, h: 16 },
+			}));
+
+			/* Villagers stand just outside their own front door */
+			const VILLAGERS = SETTINGS.villagers.map((v, i) => {
+				const home = VILLAGER_HOUSES[i];
+				return {
+					...v,
+					x: home.x + home.w / 2,
+					y: home.y + home.h + 30,
+					homeIdx: i,
+				};
+			});
+
+			/* Decorative trees ring the world edges and fill the open
+			   countryside — explicitly kept clear of the river/bridges,
+			   the town center, the neighborhood, and the orchard. */
+			const TREES = [
+				{ x: 90, y: 90 },
+				{ x: 160, y: 140 },
+				{ x: 70, y: 230 },
+				{ x: 70, y: 380 },
+				{ x: 70, y: 540 },
+				{ x: 130, y: 1180 },
+				{ x: 70, y: 1080 },
+				{ x: 480, y: 70 },
+				{ x: 650, y: 70 },
+				{ x: 820, y: 70 },
+				{ x: 600, y: 1230 },
+				{ x: 420, y: 1080 },
+				{ x: 250, y: 880 },
+				{ x: 200, y: 980 },
+				{ x: 870, y: 1280 },
+				{ x: 1980, y: 80 },
+				{ x: 2120, y: 90 },
+				{ x: 2150, y: 480 },
+				{ x: 2140, y: 700 },
+				{ x: 2160, y: 950 },
+				{ x: 2120, y: 1240 },
+				{ x: 1980, y: 1320 },
+				{ x: 1300, y: 70 },
+				{ x: 1980, y: 470 },
+				{ x: 1300, y: 1280 },
+				{ x: 1480, y: 1300 },
+				{ x: 230, y: 70 },
+				{ x: 70, y: 700 },
+				{ x: 130, y: 850 },
+			].map((t) => ({ ...t, r: 26 }));
+
+			/* A little shared orchard, its own clearing well away from the
+			   river, the houses, and the path network — trees spaced wide
+			   apart so the grove is easy to wander through. */
+			const FRUIT_TREES = [
+				{ x: 460, y: 660, fruit: "Apple" },
+				{ x: 820, y: 660, fruit: "Apple" },
+				{ x: 520, y: 800, fruit: "Peach" },
+				{ x: 740, y: 840, fruit: "Peach" },
+				{ x: 360, y: 720, fruit: "Pear" },
+				{ x: 640, y: 980, fruit: "Pear" },
+				{ x: 860, y: 760, fruit: "Orange" },
+				{ x: 420, y: 920, fruit: "Orange" },
+			].map((t) => ({
+				...t,
+				r: 26,
+				hasFruit: true,
+				regrowAt: 0,
+			}));
+
+			const ROCKS = [
+				{ x: 360, y: 480, r: 16 },
+				{ x: 900, y: 280, r: 14 },
+				{ x: 2000, y: 380, r: 16 },
+				{ x: 1500, y: 1280, r: 14 },
+				{ x: 220, y: 1000, r: 14 },
+				{ x: 1700, y: 1180, r: 16 },
+			];
+			const MUSHROOMS = [
+				{ x: 90, y: 320 },
+				{ x: 160, y: 460 },
+				{ x: 2080, y: 320 },
+				{ x: 2100, y: 1080 },
+				{ x: 920, y: 1000 },
+				{ x: 1100, y: 1260 },
+			];
+			const BENCHES = [
+				{ x: 1650, y: 400 },
+				{ x: 220, y: 380 },
+				{ x: 1500, y: 1000 },
+			];
+			const LANTERNS = [
+				{ x: 1530, y: 300 },
+				{ x: 1770, y: 300 },
+				{ x: 1430, y: 460 },
+				{ x: 1870, y: 460 },
+				{ x: 1500, y: 596 },
+				{ x: 1300, y: 1000 },
+			];
+			const BEACH_DECOR = [
+				{ type: "umbrella", x: 950, y: 1355 },
+				{ type: "sandcastle", x: 1300, y: 1360 },
+				{ type: "shells", x: 700, y: 1365 },
+				{ type: "shells", x: 1600, y: 1358 },
+			];
+			const LILY_PADS = [
+				{ dx: -50, dy: 20 },
+				{ dx: 40, dy: -25 },
+				{ dx: 10, dy: 35 },
+				{ dx: -25, dy: -30 },
+			];
+			const DUCKS = [
+				{ angle: 0, radius: 55, speed: 0.012 },
+				{ angle: 2.4, radius: 35, speed: -0.016 },
+			];
+			/* Dirt paths connect the river crossing, the town center, and
+			   the neighborhood — drawn wide of every building footprint. */
+			const PATHS = [
+				{ x: 560, y: 530, w: 40, h: 460 }, // dock area north-south spine
+				{ x: 560, y: 940, w: 40, h: 420 },
+				{ x: 600, y: 540, w: 500, h: 40 }, // toward bridge 1
+				{ x: 1112, y: 540, w: 40, h: 200 },
+				{ x: 1112, y: 1020, w: 40, h: 130 },
+				{ x: 600, y: 1010, w: 532, h: 40 }, // toward bridge 2
+				{ x: 1620, y: 410, w: 40, h: 150 }, // town center down into neighborhood
+				{ x: 1340, y: 596, w: 660, h: 40 }, // street past player houses
+				{ x: 1620, y: 596, w: 40, h: 240 },
+				{ x: 1240, y: 836, w: 760, h: 40 }, // street past villager houses
+				{ x: 1860, y: 670, w: 40, h: 170 }, // spur to museum
+				{ x: 1860, y: 950, w: 40, h: 110 },
+			];
+
+			/* ── Water / dock helper ──────────────────────────────────────── */
+			function pointInWater(x, y, margin) {
+				margin = margin || 0;
+				const dx = (x - POND.x) / (POND.rx + margin);
+				const dy = (y - POND.y) / (POND.ry + margin);
+				if (dx * dx + dy * dy < 1) return true;
+
+				const rx0 = RIVER.x - margin,
+					rx1 = RIVER.x + RIVER.w + margin;
+				const ry0 = RIVER.y - margin,
+					ry1 = RIVER.y + RIVER.h + margin;
+				if (x >= rx0 && x <= rx1 && y >= ry0 && y <= ry1) {
+					const onBridge = BRIDGES.some(
+						(b) =>
+							x >= b.x - margin - 10 &&
+							x <= b.x + b.w + margin + 10 &&
+							y >= b.y - margin - 10 &&
+							y <= b.y + b.h + margin + 10,
+					);
+					if (!onBridge) return true;
+				}
+
+				if (y >= OCEAN_Y - margin) {
+					const onDock =
+						x >= DOCK.x - margin - 6 &&
+						x <= DOCK.x + DOCK.w + margin + 6 &&
+						y >= DOCK.y - margin - 6 &&
+						y <= DOCK.y + DOCK.h + margin + 6;
+					if (!onDock) return true;
+				}
+				return false;
+			}
+
+			/* ── Spread-position generator (world space) ──────────────────── */
+			function isWalkable(x, y, margin) {
+				if (pointInWater(x, y, margin)) return false;
+				for (const t of TREES)
+					if (Math.hypot(x - t.x, y - t.y) < t.r + margin) return false;
+				for (const t of FRUIT_TREES)
+					if (Math.hypot(x - t.x, y - t.y) < t.r + margin) return false;
+				for (const r of ROCKS)
+					if (Math.hypot(x - r.x, y - r.y) < r.r + margin) return false;
+				for (const h of HOUSES) {
+					if (
+						x > h.x - margin &&
+						x < h.x + h.w + margin &&
+						y > h.y - margin - 40 &&
+						y < h.y + h.h + margin
+					)
+						return false;
+				}
+				for (const h of VILLAGER_HOUSES) {
+					if (
+						x > h.x - margin &&
+						x < h.x + h.w + margin &&
+						y > h.y - margin - 36 &&
+						y < h.y + h.h + margin
+					)
+						return false;
+				}
+				if (
+					x > MUSEUM.x - margin &&
+					x < MUSEUM.x + MUSEUM.w + margin &&
+					y > MUSEUM.y - margin - 40 &&
+					y < MUSEUM.y + MUSEUM.h + margin
+				)
+					return false;
+				if (
+					x > SHOP.x - margin &&
+					x < SHOP.x + SHOP.w + margin &&
+					y > SHOP.y - margin - 40 &&
+					y < SHOP.y + SHOP.h + margin
+				)
+					return false;
+				if (Math.hypot(x - PLAZA.x, y - PLAZA.y) < 14 + margin) return false;
+				if (Math.hypot(x - WELL.x, y - WELL.y) < WELL.r + margin) return false;
+				if (Math.hypot(x - BULLETIN.x, y - BULLETIN.y) < 20 + margin)
+					return false;
+				if (Math.hypot(x - WELCOME_SIGN.x, y - WELCOME_SIGN.y) < 18 + margin)
+					return false;
+				if (x < 40 || x > WORLD_W - 40 || y < 40 || y > WORLD_H - 40)
+					return false;
+				return true;
+			}
+			function generateSpreadPositions(count, minDist, margin) {
+				const candidates = [];
+				for (let gx = 1; gx < WORLD_W / 32; gx++) {
+					for (let gy = 1; gy < WORLD_H / 32; gy++) {
+						const x = gx * 32,
+							y = gy * 32;
+						if (isWalkable(x, y, margin)) candidates.push({ x, y });
+					}
+				}
+				for (let i = candidates.length - 1; i > 0; i--) {
+					const j = Math.floor(Math.random() * (i + 1));
+					[candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+				}
+				const chosen = [];
+				for (const c of candidates) {
+					if (chosen.length >= count) break;
+					if (chosen.every((p) => Math.hypot(p.x - c.x, p.y - c.y) > minDist))
+						chosen.push(c);
+				}
+				let i = 0;
+				while (chosen.length < count && i < candidates.length) {
+					const c = candidates[i++];
+					if (!chosen.includes(c)) chosen.push(c);
+				}
+				return chosen;
+			}
+
+			/* ── Parallax background layers ────────────────────────────────── */
+			const CLOUDS = Array.from({ length: 34 }, () => ({
+				x: -300 + Math.random() * (WORLD_W + 600),
+				y: -300 + Math.random() * (WORLD_H + 600),
+				r: 30 + Math.random() * 50,
+			}));
+			const TREELINE = Array.from({ length: 56 }, () => ({
+				x: -200 + Math.random() * (WORLD_W + 400),
+				y: -200 + Math.random() * (WORLD_H + 400),
+				r: 18 + Math.random() * 22,
+			}));
+
+			/* ── Collectible state ───────────────────────────────────────── */
+			let NOTES = [],
+				DIGSPOTS = [],
+				BUGS = [],
+				FISHSHADOWS = [];
+			let foundCount = 0;
+			const fishCaught = new Set(),
+				bugsCaught = new Set(),
+				fossilsFound = new Set(),
+				fruitCaught = new Set();
+
+			/* ── Economy & shop state ──────────────────────────────────────
+			   Bells are earned from fishing/bugs/fossils/fruit and spent at
+			   Maple's Mercantile on outfit colors + hats. */
+			let bells = 0;
+			const ownedOutfits = new Set(["pink"]);
+			const ownedHats = new Set(["none"]);
+			let equippedOutfit = "pink";
+			let equippedHat = "none";
+			let shopTab = "outfits";
+
+			function earnBells(amount) {
+				bells += amount;
+				updateHud();
+				saveGame();
+			}
+			function spendBells(amount) {
+				if (bells < amount) return false;
+				bells -= amount;
+				updateHud();
+				saveGame();
+				return true;
+			}
+
+			function setupNotes() {
+				const positions = generateSpreadPositions(
+					SETTINGS.notes.length,
+					90,
+					30,
+				);
+				NOTES = SETTINGS.notes.map((text, i) => ({
+					x: positions[i] ? positions[i].x : 80 + i * 40,
+					y: positions[i] ? positions[i].y : 80,
+					text,
+					collected: false,
+					bob: Math.random() * Math.PI * 2,
+				}));
+			}
+			function spawnDigSpot() {
+				const pos = generateSpreadPositions(1, 100, 30)[0];
+				if (pos) DIGSPOTS.push({ x: pos.x, y: pos.y, active: true });
+			}
+			function setupDigSpots() {
+				DIGSPOTS = [];
+				for (let i = 0; i < 7; i++) spawnDigSpot();
+			}
+			function setupBugs() {
+				BUGS = Array.from({ length: 6 }, () => ({
+					x: 100 + Math.random() * (WORLD_W - 200),
+					y: 100 + Math.random() * (WORLD_H - 200),
+					vx: -0.6 + Math.random() * 1.2,
+					vy: -0.6 + Math.random() * 1.2,
+					phase: Math.random() * Math.PI * 2,
+					active: true,
+				}));
+			}
+			function setupFish() {
+				FISHSHADOWS = Array.from({ length: 3 }, () => ({
+					angle: Math.random() * Math.PI * 2,
+					radius: 30 + Math.random() * 50,
+					speed: 0.01 + Math.random() * 0.015,
+				}));
+			}
+			function setupFruit() {
+				FRUIT_TREES.forEach((t) => {
+					t.hasFruit = true;
+					t.regrowAt = 0;
+				});
+			}
+			function bellsFor(kind) {
+				const range = SETTINGS.bellValues[kind] || [10, 20];
+				return Math.round(range[0] + Math.random() * (range[1] - range[0]));
+			}
+
+
+			/* ── Player & scene state ────────────────────────────────────── */
+			const player = { x: 500, y: 480, dir: "down", moving: false, frame: 0 };
+			const keys = { up: false, down: false, left: false, right: false };
+			let currentTool = "net";
+			let dialogOpen = false,
+				bookOpen = false,
+				museumOpen = false,
+				shopOpen = false,
+				bulletinOpen = false,
+				villagerOpen = false,
+				signOpen = false;
+			let fishingState = "idle";
+			let bobber = null,
+				fishTimer = null;
+			let scene = "outside"; // "outside" | "inside"
+			let insideHouseIdx = -1;
+			let outdoorReturn = { x: 500, y: 480 };
+
+			const ROOM = { x: 130, y: 90, w: 700, h: 460, wallH: 150 };
+
+			function isBusy() {
+				return (
+					dialogOpen ||
+					bookOpen ||
+					museumOpen ||
+					shopOpen ||
+					bulletinOpen ||
+					villagerOpen ||
+					signOpen ||
+					fishingState !== "idle"
+				);
+			}
+
+			function resetGame() {
+				setupNotes();
+				setupDigSpots();
+				setupBugs();
+				setupFish();
+				setupFruit();
+				scene = "outside";
+				insideHouseIdx = -1;
+				player.x = 500;
+				player.y = 480;
+				foundCount = 0;
+				fishCaught.clear();
+				bugsCaught.clear();
+				fossilsFound.clear();
+				fruitCaught.clear();
+				bells = 0;
+				ownedOutfits.clear();
+				ownedOutfits.add("pink");
+				ownedHats.clear();
+				ownedHats.add("none");
+				equippedOutfit = "pink";
+				equippedHat = "none";
+				SETTINGS.playerColor = colorForOutfit(equippedOutfit);
+				loadGame(); // restore anything saved from a previous visit
+				updateHud();
+				document.getElementById("celebrate-overlay").classList.remove("show");
+			}
+			// "Explore Again" after finding every letter: re-hides the
+			// letters for another round, but keeps Bells, the shop, and
+			// every collection — finishing the game shouldn't cost progress.
+			function replayLetters() {
+				setupNotes();
+				foundCount = 0;
+				player.x = 500;
+				player.y = 480;
+				saveGame();
+				updateHud();
+				document.getElementById("celebrate-overlay").classList.remove("show");
+			}
+			function colorForOutfit(id) {
+				const o = SETTINGS.outfitColors.find((c) => c.id === id);
+				return o ? o.hex : SETTINGS.playerColor;
+			}
+
+			/* ── Save / load (localStorage) ──────────────────────────────────
+			   Everything persists between visits on this device: Bells,
+			   owned + equipped outfits/hats, letters found, and every
+			   fish/bug/fossil/fruit collected so far. */
+			const SAVE_KEY = "islandSave_v1";
+			let saveScheduled = false;
+			function saveGame() {
+				// Debounce so rapid actions (e.g. several catches in a row)
+				// don't write to storage more than necessary.
+				if (saveScheduled) return;
+				saveScheduled = true;
+				setTimeout(() => {
+					saveScheduled = false;
+					try {
+						const data = {
+							bells,
+							ownedOutfits: Array.from(ownedOutfits),
+							ownedHats: Array.from(ownedHats),
+							equippedOutfit,
+							equippedHat,
+							collectedLetters: NOTES.map((n) => !!n.collected),
+							fishCaught: Array.from(fishCaught),
+							bugsCaught: Array.from(bugsCaught),
+							fossilsFound: Array.from(fossilsFound),
+							fruitCaught: Array.from(fruitCaught),
+						};
+						localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+					} catch (err) {
+						console.warn("Couldn't save progress:", err);
+					}
+				}, 200);
+			}
+			function loadGame() {
+				let data;
+				try {
+					const raw = localStorage.getItem(SAVE_KEY);
+					if (!raw) return false;
+					data = JSON.parse(raw);
+				} catch (err) {
+					console.warn("Couldn't read saved progress:", err);
+					return false;
+				}
+				if (!data) return false;
+
+				bells = typeof data.bells === "number" ? data.bells : 0;
+
+				ownedOutfits.clear();
+				(data.ownedOutfits || ["pink"]).forEach((id) =>
+					ownedOutfits.add(id),
+				);
+				ownedOutfits.add("pink"); // always available, never lost
+
+				ownedHats.clear();
+				(data.ownedHats || ["none"]).forEach((id) => ownedHats.add(id));
+				ownedHats.add("none");
+
+				equippedOutfit = ownedOutfits.has(data.equippedOutfit)
+					? data.equippedOutfit
+					: "pink";
+				equippedHat = ownedHats.has(data.equippedHat)
+					? data.equippedHat
+					: "none";
+				SETTINGS.playerColor = colorForOutfit(equippedOutfit);
+
+				if (Array.isArray(data.collectedLetters)) {
+					NOTES.forEach((n, i) => {
+						if (data.collectedLetters[i]) n.collected = true;
+					});
+					foundCount = NOTES.filter((n) => n.collected).length;
+				}
+
+				fishCaught.clear();
+				(data.fishCaught || []).forEach((s) => fishCaught.add(s));
+				bugsCaught.clear();
+				(data.bugsCaught || []).forEach((s) => bugsCaught.add(s));
+				fossilsFound.clear();
+				(data.fossilsFound || []).forEach((s) => fossilsFound.add(s));
+				fruitCaught.clear();
+				(data.fruitCaught || []).forEach((s) => fruitCaught.add(s));
+
+				return true;
+			}
+			function updateHud() {
+				document.getElementById("hud-count").textContent =
+					"💌 " + foundCount + "/" + NOTES.length;
+				document.getElementById("hud-fish").textContent =
+					"🐟 " + fishCaught.size + "/" + SETTINGS.fishSpecies.length;
+				document.getElementById("hud-bugs").textContent =
+					"🦋 " + bugsCaught.size + "/" + SETTINGS.bugSpecies.length;
+				document.getElementById("hud-fossils").textContent =
+					"🦴 " + fossilsFound.size + "/" + SETTINGS.fossilSpecies.length;
+				document.getElementById("hud-fruit").textContent =
+					"🍎 " + fruitCaught.size + "/" + SETTINGS.fruitSpecies.length;
+				document.getElementById("hud-bells-amt").textContent = bells;
+			}
+			function showToast(text) {
+				const layer = document.getElementById("toast-layer");
+				const t = document.createElement("div");
+				t.className = "toast";
+				t.textContent = text;
+				layer.appendChild(t);
+				setTimeout(() => t.remove(), 1800);
+			}
+
+			/* ── Input ────────────────────────────────────────────────────── */
+			window.addEventListener("keydown", (e) => {
+				if (["1", "2", "3", "4"].includes(e.key)) {
+					setTool(["net", "rod", "shovel", "hand"][parseInt(e.key, 10) - 1]);
+					return;
+				}
+				if (e.key === " ") {
+					e.preventDefault();
+					doAction();
+					return;
+				}
+				if (isBusy()) return;
+				switch (e.key) {
+					case "ArrowUp":
+					case "w":
+					case "W":
+						keys.up = true;
+						break;
+					case "ArrowDown":
+					case "s":
+					case "S":
+						keys.down = true;
+						break;
+					case "ArrowLeft":
+					case "a":
+					case "A":
+						keys.left = true;
+						break;
+					case "ArrowRight":
+					case "d":
+					case "D":
+						keys.right = true;
+						break;
+				}
+			});
+			window.addEventListener("keyup", (e) => {
+				switch (e.key) {
+					case "ArrowUp":
+					case "w":
+					case "W":
+						keys.up = false;
+						break;
+					case "ArrowDown":
+					case "s":
+					case "S":
+						keys.down = false;
+						break;
+					case "ArrowLeft":
+					case "a":
+					case "A":
+						keys.left = false;
+						break;
+					case "ArrowRight":
+					case "d":
+					case "D":
+						keys.right = false;
+						break;
+				}
+			});
+			function wireDpad(id, key) {
+				const el = document.getElementById(id);
+				const on = (e) => {
+					e.preventDefault();
+					keys[key] = true;
+				};
+				const off = (e) => {
+					e.preventDefault();
+					keys[key] = false;
+				};
+				el.addEventListener("touchstart", on, { passive: false });
+				el.addEventListener("touchend", off);
+				el.addEventListener("touchcancel", off);
+				el.addEventListener("mousedown", on);
+				el.addEventListener("mouseup", off);
+				el.addEventListener("mouseleave", off);
+			}
+			wireDpad("dpad-up", "up");
+			wireDpad("dpad-down", "down");
+			wireDpad("dpad-left", "left");
+			wireDpad("dpad-right", "right");
+			document.getElementById("action-btn").addEventListener("click", doAction);
+
+			function setTool(t) {
+				if (fishingState !== "idle" && t !== "rod") cancelFishing(true);
+				currentTool = t;
+				["net", "rod", "shovel", "hand"].forEach((name) =>
+					document
+						.getElementById("tool-" + name)
+						.classList.toggle("active", name === t),
+				);
+			}
+			document.getElementById("tool-net").onclick = () => setTool("net");
+			document.getElementById("tool-rod").onclick = () => setTool("rod");
+			document.getElementById("tool-shovel").onclick = () => setTool("shovel");
+			document.getElementById("tool-hand").onclick = () => setTool("hand");
+			setTool("net");
+
+			/* ── Collision (outside) ─────────────────────────────────────── */
+			function collides(x, y) {
+				const r = 14;
+				if (pointInWater(x, y, r * 0.5)) return true;
+				for (const t of TREES)
+					if (Math.hypot(x - t.x, y - t.y) < t.r * 0.7 + r * 0.6) return true;
+				for (const t of FRUIT_TREES)
+					if (Math.hypot(x - t.x, y - t.y) < t.r * 0.7 + r * 0.6) return true;
+				for (const rk of ROCKS)
+					if (Math.hypot(x - rk.x, y - rk.y) < rk.r * 0.8 + r * 0.5)
+						return true;
+				for (const h of HOUSES) {
+					if (
+						x > h.x - r &&
+						x < h.x + h.w + r &&
+						y > h.y - r &&
+						y < h.y + h.h + r
+					) {
+						const inDoor =
+							x > h.door.x - 6 &&
+							x < h.door.x + h.door.w + 6 &&
+							y > h.door.y - 6;
+						if (!inDoor) return true;
+					}
+				}
+				for (const h of VILLAGER_HOUSES) {
+					if (
+						x > h.x - r &&
+						x < h.x + h.w + r &&
+						y > h.y - r &&
+						y < h.y + h.h + r
+					)
+						return true; // villager homes are cozy but not walk-in
+				}
+				if (Math.hypot(x - PLAZA.x, y - PLAZA.y) < 14 + r * 0.4) return true;
+				if (Math.hypot(x - WELL.x, y - WELL.y) < WELL.r + r * 0.5) return true;
+				if (Math.hypot(x - BULLETIN.x, y - BULLETIN.y) < 20 + r * 0.5)
+					return true;
+				if (
+					Math.hypot(x - WELCOME_SIGN.x, y - WELCOME_SIGN.y) <
+					18 + r * 0.5
+				)
+					return true;
+				if (
+					x > MUSEUM.x - r &&
+					x < MUSEUM.x + MUSEUM.w + r &&
+					y > MUSEUM.y - r &&
+					y < MUSEUM.y + MUSEUM.h + r
+				) {
+					const inDoor =
+						x > MUSEUM_DOOR.x - 6 &&
+						x < MUSEUM_DOOR.x + MUSEUM_DOOR.w + 6 &&
+						y > MUSEUM_DOOR.y - 6;
+					if (!inDoor) return true;
+				}
+				if (
+					x > SHOP.x - r &&
+					x < SHOP.x + SHOP.w + r &&
+					y > SHOP.y - r &&
+					y < SHOP.y + SHOP.h + r
+				) {
+					const inDoor =
+						x > SHOP_DOOR.x - 6 &&
+						x < SHOP_DOOR.x + SHOP_DOOR.w + 6 &&
+						y > SHOP_DOOR.y - 6;
+					if (!inDoor) return true;
+				}
+				return false;
+			}
+			function facingPoint(dist) {
+				const d = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[
+					player.dir
+				];
+				return { x: player.x + d[0] * dist, y: player.y + d[1] * dist };
+			}
+
+			/* ── House interiors ─────────────────────────────────────────── */
+			function enterHouse(i) {
+				outdoorReturn = {
+					x: HOUSES[i].door.x + HOUSES[i].door.w / 2,
+					y: HOUSES[i].door.y + HOUSES[i].door.h + 28,
+				};
+				scene = "inside";
+				insideHouseIdx = i;
+				player.x = ROOM.x + ROOM.w / 2;
+				player.y = ROOM.y + ROOM.h - 50;
+				document.getElementById("minimap-wrap").classList.remove("show");
+			}
+			function enterMuseumBuilding() {
+				openMuseum();
+			}
+			function exitHouse() {
+				scene = "outside";
+				player.x = outdoorReturn.x;
+				player.y = outdoorReturn.y;
+				document.getElementById("minimap-wrap").classList.add("show");
+			}
+
+			/* ── Tool actions ─────────────────────────────────────────────── */
+			function doAction() {
+				if (scene !== "outside") return;
+				if (isBusy() && fishingState === "idle") return;
+				if (currentTool === "rod") handleRod();
+				else if (currentTool === "shovel") handleShovel();
+				else if (currentTool === "net") handleNet();
+				else if (currentTool === "hand") handleHand();
+			}
+			function handleRod() {
+				if (fishingState === "idle") {
+					const target = facingPoint(40);
+					if (
+						pointInWater(player.x, player.y, 0) ||
+						!pointInWater(target.x, target.y, 0)
+					) {
+						showToast("Face the water and stand right at the edge to cast!");
+						return;
+					}
+					bobber = target;
+					fishingState = "cast";
+					clearTimeout(fishTimer);
+					fishTimer = setTimeout(
+						() => {
+							fishingState = "bite";
+							fishTimer = setTimeout(() => cancelFishing(false), 850);
+						},
+						900 + Math.random() * 1500,
+					);
+				} else if (fishingState === "bite") {
+					clearTimeout(fishTimer);
+					const species =
+						SETTINGS.fishSpecies[
+							Math.floor(Math.random() * SETTINGS.fishSpecies.length)
+						];
+					fishCaught.add(species.name);
+					const earned = bellsFor("fish");
+					earnBells(earned);
+					showToast(
+						"Caught a " +
+							species.emoji +
+							" " +
+							species.name +
+							"! +🔔" +
+							earned,
+					);
+					fishingState = "idle";
+					bobber = null;
+				} else {
+					cancelFishing(true);
+				}
+			}
+			function cancelFishing(silent) {
+				clearTimeout(fishTimer);
+				if (!silent && fishingState !== "idle") showToast("It got away...");
+				fishingState = "idle";
+				bobber = null;
+			}
+			function handleShovel() {
+				const spot = DIGSPOTS.find(
+					(d) => d.active && Math.hypot(d.x - player.x, d.y - player.y) < 26,
+				);
+				if (!spot) {
+					showToast("Doesn't look like anything's buried here.");
+					return;
+				}
+				spot.active = false;
+				const species =
+					SETTINGS.fossilSpecies[
+						Math.floor(Math.random() * SETTINGS.fossilSpecies.length)
+					];
+				fossilsFound.add(species.name);
+				const earned = bellsFor("fossil");
+				earnBells(earned);
+				showToast(
+					"Dug up a " + species.emoji + " " + species.name + "! +🔔" + earned,
+				);
+				setTimeout(spawnDigSpot, 12000 + Math.random() * 10000);
+			}
+			function handleNet() {
+				const bug = BUGS.find(
+					(b) => b.active && Math.hypot(b.x - player.x, b.y - player.y) < 30,
+				);
+				if (!bug) {
+					showToast("Nothing to catch here.");
+					return;
+				}
+				const species =
+					SETTINGS.bugSpecies[
+						Math.floor(Math.random() * SETTINGS.bugSpecies.length)
+					];
+				bugsCaught.add(species.name);
+				const earned = bellsFor("bug");
+				earnBells(earned);
+				showToast(
+					"Caught a " + species.emoji + " " + species.name + "! +🔔" + earned,
+				);
+				bug.x = 80 + Math.random() * (WORLD_W - 160);
+				bug.y = 80 + Math.random() * (WORLD_H - 160);
+			}
+			function handleHand() {
+				const tree = FRUIT_TREES.find(
+					(t) =>
+						t.hasFruit && Math.hypot(t.x - player.x, t.y - player.y) < 34,
+				);
+				if (!tree) {
+					showToast("No ripe fruit close enough to pick.");
+					return;
+				}
+				tree.hasFruit = false;
+				tree.regrowAt = performance.now() + 20000 + Math.random() * 10000;
+				const species = SETTINGS.fruitSpecies.find(
+					(f) => f.name === tree.fruit,
+				) || SETTINGS.fruitSpecies[0];
+				fruitCaught.add(species.name);
+				const earned = bellsFor("fruit");
+				earnBells(earned);
+				showToast(
+					"Picked an " + species.emoji + " " + species.name + "! +🔔" + earned,
+				);
+			}
+
+			/* ── Game loop ────────────────────────────────────────────────── */
+			const SPEED = 3;
+			function step() {
+				if (scene === "outside") stepOutside();
+				else stepInside();
+
+				BUGS.forEach((b) => {
+					b.phase += 0.05;
+					b.x += b.vx + Math.sin(b.phase) * 0.4;
+					b.y += b.vy + Math.cos(b.phase * 0.7) * 0.4;
+					if (b.x < 40 || b.x > WORLD_W - 40) b.vx *= -1;
+					if (b.y < 40 || b.y > WORLD_H - 40) b.vy *= -1;
+				});
+				FISHSHADOWS.forEach((f) => (f.angle += f.speed));
+				DUCKS.forEach((d) => (d.angle += d.speed));
+				const now = performance.now();
+				FRUIT_TREES.forEach((t) => {
+					if (!t.hasFruit && t.regrowAt && now >= t.regrowAt) {
+						t.hasFruit = true;
+						t.regrowAt = 0;
+					}
+				});
+
+				render();
+				requestAnimationFrame(step);
+			}
+
+			function stepOutside() {
+				if (!isBusy()) {
+					let dx = 0,
+						dy = 0;
+					if (keys.up) dy -= 1;
+					if (keys.down) dy += 1;
+					if (keys.left) dx -= 1;
+					if (keys.right) dx += 1;
+					player.moving = dx !== 0 || dy !== 0;
+					if (player.moving) {
+						const len = Math.hypot(dx, dy);
+						dx = (dx / len) * SPEED;
+						dy = (dy / len) * SPEED;
+						if (Math.abs(dx) > Math.abs(dy))
+							player.dir = dx > 0 ? "right" : "left";
+						else if (dy !== 0) player.dir = dy > 0 ? "down" : "up";
+
+						const nx = Math.min(WORLD_W - 20, Math.max(20, player.x + dx));
+						const ny = Math.min(WORLD_H - 20, Math.max(20, player.y + dy));
+						if (!collides(nx, player.y)) player.x = nx;
+						if (!collides(player.x, ny)) player.y = ny;
+						player.frame += 0.18;
+					}
+
+					for (const n of NOTES) {
+						if (n.collected) continue;
+						if (Math.hypot(player.x - n.x, player.y - n.y) < 26) {
+							n.collected = true;
+							foundCount++;
+							updateHud();
+							openLetter(n.text);
+							if (foundCount === NOTES.length) setTimeout(celebrate, 600);
+							break;
+						}
+					}
+
+					if (
+						player.x > MUSEUM_DOOR.x - 6 &&
+						player.x < MUSEUM_DOOR.x + MUSEUM_DOOR.w + 6 &&
+						player.y > MUSEUM_DOOR.y &&
+						player.y < MUSEUM_DOOR.y + MUSEUM_DOOR.h + 10
+					) {
+						openMuseum();
+						player.y = MUSEUM_DOOR.y + MUSEUM_DOOR.h + 24;
+					}
+
+					if (
+						player.x > SHOP_DOOR.x - 6 &&
+						player.x < SHOP_DOOR.x + SHOP_DOOR.w + 6 &&
+						player.y > SHOP_DOOR.y &&
+						player.y < SHOP_DOOR.y + SHOP_DOOR.h + 10
+					) {
+						openShop();
+						player.y = SHOP_DOOR.y + SHOP_DOOR.h + 22;
+					}
+
+					HOUSES.forEach((h, i) => {
+						if (
+							player.x > h.door.x - 6 &&
+							player.x < h.door.x + h.door.w + 6 &&
+							player.y > h.door.y &&
+							player.y < h.door.y + h.door.h + 8
+						) {
+							enterHouse(i);
+						}
+					});
+
+					// Bulletin board — walk up close to read it
+					if (Math.hypot(player.x - BULLETIN.x, player.y - BULLETIN.y) < 32) {
+						openBulletin();
+					}
+					// Welcome sign — walk up close to read it
+					if (
+						Math.hypot(player.x - WELCOME_SIGN.x, player.y - WELCOME_SIGN.y) <
+						30
+					) {
+						openSign();
+					}
+
+					const npcDist = Math.hypot(player.x - NPC.x, player.y - NPC.y);
+					const bubble = document.getElementById("npc-bubble");
+					if (npcDist < 60) {
+						if (bubble.style.display !== "block") {
+							bubble.textContent =
+								SETTINGS.npcLines[
+									Math.floor(Math.random() * SETTINGS.npcLines.length)
+								];
+						}
+						bubble.style.display = "block";
+						bubble.style.left = ((NPC.x - camera.x) / VIEW_W) * 100 + "%";
+						bubble.style.top = ((NPC.y - 34 - camera.y) / VIEW_H) * 100 + "%";
+					} else {
+						bubble.style.display = "none";
+						// Villager greetings — walk up to chat
+						const villager = VILLAGERS.find(
+							(v) => Math.hypot(player.x - v.x, player.y - v.y) < 34,
+						);
+						if (villager) openVillager(villager);
+					}
+				}
+				camera.x = Math.min(
+					WORLD_W - VIEW_W,
+					Math.max(0, player.x - VIEW_W / 2),
+				);
+				camera.y = Math.min(
+					WORLD_H - VIEW_H,
+					Math.max(0, player.y - VIEW_H / 2),
+				);
+			}
+
+			function stepInside() {
+				document.getElementById("npc-bubble").style.display = "none";
+				let dx = 0,
+					dy = 0;
+				if (keys.up) dy -= 1;
+				if (keys.down) dy += 1;
+				if (keys.left) dx -= 1;
+				if (keys.right) dx += 1;
+				player.moving = dx !== 0 || dy !== 0;
+				if (player.moving) {
+					const len = Math.hypot(dx, dy);
+					dx = (dx / len) * SPEED;
+					dy = (dy / len) * SPEED;
+					if (Math.abs(dx) > Math.abs(dy))
+						player.dir = dx > 0 ? "right" : "left";
+					else if (dy !== 0) player.dir = dy > 0 ? "down" : "up";
+					player.x = Math.min(
+						ROOM.x + ROOM.w - 40,
+						Math.max(ROOM.x + 40, player.x + dx),
+					);
+					player.y = Math.min(
+						ROOM.y + ROOM.h - 24,
+						Math.max(ROOM.y + ROOM.wallH + 10, player.y + dy),
+					);
+					player.frame += 0.18;
+				}
+				// exit mat
+				if (
+					player.y > ROOM.y + ROOM.h - 40 &&
+					player.x > ROOM.x + ROOM.w / 2 - 36 &&
+					player.x < ROOM.x + ROOM.w / 2 + 36
+				) {
+					exitHouse();
+				}
+			}
+
+			/* ── Rendering: outside ───────────────────────────────────────── */
+			function render() {
+				if (scene === "inside") {
+					renderInside();
+					return;
+				}
+
+				ctx.fillStyle = "#7fd17e";
+				ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+				ctx.save();
+				ctx.translate(-camera.x * 0.25, -camera.y * 0.25);
+				CLOUDS.forEach((c) => {
+					ctx.beginPath();
+					ctx.ellipse(c.x, c.y, c.r, c.r * 0.55, 0, 0, Math.PI * 2);
+					ctx.fillStyle = "rgba(255,255,255,0.16)";
+					ctx.fill();
+				});
+				ctx.restore();
+
+				ctx.save();
+				ctx.translate(-camera.x * 0.55, -camera.y * 0.55);
+				TREELINE.forEach((c) => {
+					ctx.beginPath();
+					ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+					ctx.fillStyle = "rgba(40,110,70,0.10)";
+					ctx.fill();
+				});
+				ctx.restore();
+
+				ctx.save();
+				ctx.translate(-camera.x, -camera.y);
+
+				const grad = ctx.createLinearGradient(0, 0, 0, WORLD_H);
+				grad.addColorStop(0, "#9fe39e");
+				grad.addColorStop(1, "#6fc472");
+				ctx.fillStyle = grad;
+				ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+				ctx.fillStyle = "rgba(255,255,255,0.05)";
+				for (let i = 0; i < 160; i++)
+					ctx.fillRect((i * 173) % WORLD_W, (i * 121 + 40) % WORLD_H, 18, 6);
+
+				// dirt paths
+				ctx.fillStyle = "#e3c994";
+				PATHS.forEach((p) => roundRect(p.x, p.y, p.w, p.h, 16, true));
+				ctx.strokeStyle = "rgba(170,140,90,0.4)";
+				ctx.lineWidth = 2;
+				PATHS.forEach((p) => roundRect(p.x, p.y, p.w, p.h, 16, false, true));
+
+				// beach + ocean
+				ctx.fillStyle = "#f3e3b8";
+				ctx.fillRect(0, BEACH_Y, WORLD_W, OCEAN_Y - BEACH_Y);
+				ctx.fillStyle = "rgba(180,150,90,0.25)";
+				for (let i = 0; i < 60; i++)
+					ctx.fillRect((i * 97) % WORLD_W, BEACH_Y + 6 + ((i * 13) % 36), 6, 2);
+				const oceanGrad = ctx.createLinearGradient(0, OCEAN_Y, 0, WORLD_H);
+				oceanGrad.addColorStop(0, "#7ec8e8");
+				oceanGrad.addColorStop(1, "#4a9cc9");
+				ctx.fillStyle = oceanGrad;
+				ctx.fillRect(0, OCEAN_Y, WORLD_W, WORLD_H - OCEAN_Y);
+				ctx.strokeStyle = "rgba(255,255,255,0.35)";
+				ctx.lineWidth = 2;
+				for (let i = 0; i < 8; i++) {
+					ctx.beginPath();
+					ctx.moveTo(0, OCEAN_Y + 14 + i * 12);
+					for (let x = 0; x <= WORLD_W; x += 40)
+						ctx.lineTo(x, OCEAN_Y + 14 + i * 12 + Math.sin(x * 0.02 + i) * 3);
+					ctx.stroke();
+				}
+				drawBeachDecor();
+				drawDock();
+
+				// river + bridges
+				const rgrad = ctx.createLinearGradient(
+					RIVER.x,
+					0,
+					RIVER.x + RIVER.w,
+					0,
+				);
+				rgrad.addColorStop(0, "#6cc4e8");
+				rgrad.addColorStop(1, "#8fdcf5");
+				ctx.fillStyle = rgrad;
+				ctx.fillRect(RIVER.x, RIVER.y, RIVER.w, RIVER.h);
+				ctx.strokeStyle = "rgba(255,255,255,0.3)";
+				ctx.lineWidth = 2;
+				for (let y = 0; y < RIVER.h; y += 26) {
+					ctx.beginPath();
+					ctx.moveTo(RIVER.x + 4, y + 10);
+					ctx.lineTo(RIVER.x + RIVER.w - 4, y + 16);
+					ctx.stroke();
+				}
+				BRIDGES.forEach(drawBridge);
+
+				// plaza + well + bunting
+				ctx.beginPath();
+				ctx.arc(PLAZA.x, PLAZA.y, PLAZA.r, 0, Math.PI * 2);
+				ctx.fillStyle = "#e8dcc0";
+				ctx.fill();
+				ctx.strokeStyle = "#cdb98e";
+				ctx.lineWidth = 4;
+				ctx.stroke();
+				drawBunting();
+				ctx.fillStyle = "#9c8a63";
+				ctx.fillRect(PLAZA.x - 3, PLAZA.y - 50, 6, 50);
+				ctx.beginPath();
+				ctx.moveTo(PLAZA.x + 3, PLAZA.y - 50);
+				ctx.lineTo(PLAZA.x + 34, PLAZA.y - 42);
+				ctx.lineTo(PLAZA.x + 3, PLAZA.y - 34);
+				ctx.closePath();
+				ctx.fillStyle = SETTINGS.playerColor;
+				ctx.fill();
+				drawWell();
+
+				// pond + lily pads + ducks + fish shadows
+				ctx.save();
+				ctx.beginPath();
+				ctx.ellipse(POND.x, POND.y, POND.rx, POND.ry, 0, 0, Math.PI * 2);
+				ctx.clip();
+				const wgrad = ctx.createLinearGradient(
+					POND.x - POND.rx,
+					POND.y - POND.ry,
+					POND.x + POND.rx,
+					POND.y + POND.ry,
+				);
+				wgrad.addColorStop(0, "#9fe0f5");
+				wgrad.addColorStop(1, "#6cc4e8");
+				ctx.fillStyle = wgrad;
+				ctx.fillRect(
+					POND.x - POND.rx,
+					POND.y - POND.ry,
+					POND.rx * 2,
+					POND.ry * 2,
+				);
+				FISHSHADOWS.forEach((f) => {
+					const fx = POND.x + Math.cos(f.angle) * f.radius;
+					const fy = POND.y + Math.sin(f.angle) * f.radius * 0.6;
+					ctx.beginPath();
+					ctx.ellipse(fx, fy, 10, 4, f.angle, 0, Math.PI * 2);
+					ctx.fillStyle = "rgba(20,60,70,0.35)";
+					ctx.fill();
+				});
+				LILY_PADS.forEach((l) => {
+					ctx.beginPath();
+					ctx.arc(POND.x + l.dx, POND.y + l.dy, 9, 0, Math.PI * 2);
+					ctx.fillStyle = "#5fb86a";
+					ctx.fill();
+				});
+				DUCKS.forEach((d) => {
+					const dx2 = POND.x + Math.cos(d.angle) * d.radius;
+					const dy2 = POND.y + Math.sin(d.angle) * d.radius * 0.6;
+					ctx.beginPath();
+					ctx.ellipse(dx2, dy2, 7, 5, 0, 0, Math.PI * 2);
+					ctx.fillStyle = "#fff";
+					ctx.fill();
+					ctx.beginPath();
+					ctx.arc(dx2 + 5, dy2 - 3, 3, 0, Math.PI * 2);
+					ctx.fillStyle = "#ffd76a";
+					ctx.fill();
+				});
+				ctx.restore();
+				ctx.beginPath();
+				ctx.ellipse(POND.x, POND.y, POND.rx, POND.ry, 0, 0, Math.PI * 2);
+				ctx.lineWidth = 5;
+				ctx.strokeStyle = "#f3e8cf";
+				ctx.stroke();
+
+				if (bobber) {
+					ctx.beginPath();
+					ctx.arc(bobber.x, bobber.y, 5, 0, Math.PI * 2);
+					ctx.fillStyle = fishingState === "bite" ? "#ff5b5b" : "#fff";
+					ctx.fill();
+					ctx.strokeStyle = "#c33";
+					ctx.lineWidth = 1.5;
+					ctx.stroke();
+					if (fishingState === "bite") {
+						ctx.font = "16px sans-serif";
+						ctx.fillStyle = "#000";
+						ctx.fillText("!", bobber.x + 6, bobber.y - 8);
+					}
+				}
+
+				FLOWER_SPOTS.forEach((f) => drawFlower(f.x, f.y, f.c));
+				MUSHROOMS.forEach((m) => drawMushroom(m.x, m.y));
+				BENCHES.forEach((b) => drawBench(b.x, b.y));
+				LANTERNS.forEach((l) => drawLantern(l.x, l.y));
+				ROCKS.forEach((r) => drawRock(r.x, r.y, r.r));
+				DIGSPOTS.forEach((d) => d.active && drawDigSpot(d.x, d.y));
+				drawWelcomeSign();
+				drawBulletinBoard();
+				HOUSES.forEach(drawHouse);
+				VILLAGER_HOUSES.forEach((h, i) => drawVillagerHouse(h, VILLAGERS[i]));
+				drawShop();
+				drawMuseum();
+				drawNPC();
+
+				const drawables = [
+					...TREES.map((t) => ({ type: "tree", ...t })),
+					...FRUIT_TREES.map((t) => ({ type: "fruittree", ...t })),
+					...VILLAGERS.map((v) => ({ type: "villager", ...v })),
+					...NOTES.filter((n) => !n.collected).map((n) => ({
+						type: "note",
+						...n,
+					})),
+					...BUGS.filter((b) => b.active).map((b) => ({ type: "bug", ...b })),
+					{ type: "player", x: player.x, y: player.y },
+				].sort((a, b) => a.y - b.y);
+
+				drawables.forEach((d) => {
+					if (d.type === "tree") drawTree(d.x, d.y);
+					else if (d.type === "fruittree") drawFruitTree(d);
+					else if (d.type === "villager") drawVillager(d);
+					else if (d.type === "note") drawLetter(d);
+					else if (d.type === "bug") drawBug(d);
+					else drawPlayer();
+				});
+
+				ctx.restore();
+				renderMinimap();
+			}
+
+			const FLOWER_SPOTS = [
+				{ x: 200, y: 230, c: "#ff9eb8" },
+				{ x: 225, y: 250, c: "#ffd76a" },
+				{ x: 980, y: 350, c: "#a6d8ff" },
+				{ x: 1010, y: 370, c: "#ff9eb8" },
+				{ x: 420, y: 480, c: "#ffd76a" },
+				{ x: 450, y: 500, c: "#a6d8ff" },
+				{ x: 150, y: 480, c: "#ffd76a" },
+				{ x: 1230, y: 600, c: "#ff9eb8" },
+				{ x: 1370, y: 420, c: "#a6d8ff" },
+				{ x: 380, y: 200, c: "#ff9eb8" },
+				{ x: 700, y: 850, c: "#ffd76a" },
+				{ x: 1180, y: 850, c: "#a6d8ff" },
+				{ x: 1000, y: 100, c: "#ff9eb8" },
+				{ x: 300, y: 880, c: "#a6d8ff" },
+			];
+
+			function roundRect(x, y, w, h, r, fill, strokeOnly) {
+				ctx.beginPath();
+				ctx.moveTo(x + r, y);
+				ctx.arcTo(x + w, y, x + w, y + h, r);
+				ctx.arcTo(x + w, y + h, x, y + h, r);
+				ctx.arcTo(x, y + h, x, y, r);
+				ctx.arcTo(x, y, x + w, y, r);
+				ctx.closePath();
+				if (fill) ctx.fill();
+				if (strokeOnly) ctx.stroke();
+			}
+			function drawFlower(x, y, color) {
+				ctx.save();
+				ctx.translate(x, y);
+				for (let i = 0; i < 5; i++) {
+					ctx.rotate((Math.PI * 2) / 5);
+					ctx.beginPath();
+					ctx.ellipse(0, -4, 3, 5, 0, 0, Math.PI * 2);
+					ctx.fillStyle = color;
+					ctx.fill();
+				}
+				ctx.beginPath();
+				ctx.arc(0, 0, 2.6, 0, Math.PI * 2);
+				ctx.fillStyle = "#fff7d6";
+				ctx.fill();
+				ctx.restore();
+			}
+			function drawTree(x, y) {
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(x - 5, y - 4, 10, 22);
+				ctx.beginPath();
+				ctx.arc(x, y - 22, 24, 0, Math.PI * 2);
+				ctx.fillStyle = "#3f9a5f";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(x - 8, y - 30, 17, 0, Math.PI * 2);
+				ctx.fillStyle = "#56b876";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(x + 10, y - 28, 14, 0, Math.PI * 2);
+				ctx.fillStyle = "#56b876";
+				ctx.fill();
+			}
+			function drawMushroom(x, y) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.fillStyle = "#fff3e0";
+				ctx.fillRect(-2, 0, 4, 7);
+				ctx.beginPath();
+				ctx.ellipse(0, -1, 7, 5, 0, Math.PI, Math.PI * 2);
+				ctx.fillStyle = "#e8657a";
+				ctx.fill();
+				ctx.fillStyle = "#fff";
+				ctx.beginPath();
+				ctx.arc(-3, -3, 1.2, 0, Math.PI * 2);
+				ctx.arc(2, -2, 1, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+			function drawBench(x, y) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.fillStyle = "#a9744a";
+				ctx.fillRect(-18, -4, 36, 5);
+				ctx.fillRect(-18, -14, 5, 14);
+				ctx.fillRect(13, -14, 5, 14);
+				ctx.fillRect(-18, -16, 36, 4);
+				ctx.restore();
+			}
+			function drawLantern(x, y) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.beginPath();
+				ctx.arc(0, -8, 11, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(255,220,140,0.3)";
+				ctx.fill();
+				ctx.fillStyle = "#7a5634";
+				ctx.fillRect(-2, 0, 4, 14);
+				ctx.fillStyle = "#ffd98a";
+				ctx.fillRect(-5, -14, 10, 12);
+				ctx.strokeStyle = "#7a5634";
+				ctx.lineWidth = 1.5;
+				ctx.strokeRect(-5, -14, 10, 12);
+				ctx.restore();
+			}
+			function drawRock(x, y, r) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.beginPath();
+				ctx.ellipse(0, 2, r, r * 0.7, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#aba79c";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(-r * 0.3, -r * 0.2, r * 0.5, r * 0.35, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#c4c0b4";
+				ctx.fill();
+				ctx.restore();
+			}
+			function drawWell() {
+				ctx.save();
+				ctx.translate(WELL.x, WELL.y);
+				ctx.beginPath();
+				ctx.ellipse(0, 4, WELL.r, WELL.r * 0.6, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#8c8273";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(0, 0, WELL.r * 0.7, WELL.r * 0.42, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#3a5a66";
+				ctx.fill();
+				ctx.strokeStyle = "#6b6354";
+				ctx.lineWidth = 3;
+				ctx.stroke();
+				ctx.fillStyle = "#a9744a";
+				ctx.beginPath();
+				ctx.moveTo(-22, -6);
+				ctx.lineTo(0, -28);
+				ctx.lineTo(22, -6);
+				ctx.stroke();
+				ctx.restore();
+			}
+			function drawBunting() {
+				const colors = ["#ff9eb8", "#ffd76a", "#a6d8ff", "#9fe39e"];
+				ctx.strokeStyle = "rgba(180,160,120,0.6)";
+				ctx.lineWidth = 1.5;
+				ctx.beginPath();
+				ctx.moveTo(PLAZA.x - PLAZA.r, PLAZA.y - 10);
+				ctx.quadraticCurveTo(
+					PLAZA.x,
+					PLAZA.y - 50,
+					PLAZA.x + PLAZA.r,
+					PLAZA.y - 10,
+				);
+				ctx.stroke();
+				for (let i = 0; i < 9; i++) {
+					const t = i / 8;
+					const px = PLAZA.x - PLAZA.r + t * PLAZA.r * 2;
+					const py = PLAZA.y - 10 + -40 * Math.sin(Math.PI * t);
+					ctx.beginPath();
+					ctx.moveTo(px - 5, py);
+					ctx.lineTo(px + 5, py);
+					ctx.lineTo(px, py + 9);
+					ctx.closePath();
+					ctx.fillStyle = colors[i % colors.length];
+					ctx.fill();
+				}
+			}
+			function drawDigSpot(x, y) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.beginPath();
+				ctx.ellipse(0, 4, 14, 6, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#7a5634";
+				ctx.fill();
+				ctx.strokeStyle = "#5a3f24";
+				ctx.lineWidth = 1.5;
+				ctx.beginPath();
+				ctx.moveTo(-6, -2);
+				ctx.lineTo(6, 8);
+				ctx.moveTo(6, -2);
+				ctx.lineTo(-6, 8);
+				ctx.stroke();
+				ctx.restore();
+			}
+			function drawBug(b) {
+				ctx.save();
+				ctx.translate(b.x, b.y);
+				const flap = Math.sin(b.phase * 4) * 5;
+				ctx.fillStyle = "#fff7d6";
+				ctx.beginPath();
+				ctx.ellipse(-4, -flap, 5, 3, 0.5, 0, Math.PI * 2);
+				ctx.ellipse(4, flap, 5, 3, -0.5, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "#f06d92";
+				ctx.beginPath();
+				ctx.ellipse(0, 0, 3, 5, 0, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+			function drawHouse(h) {
+				ctx.fillStyle = "#fffaf0";
+				ctx.fillRect(h.x, h.y, h.w, h.h);
+				ctx.strokeStyle = "#d8c8ad";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(h.x, h.y, h.w, h.h);
+				ctx.beginPath();
+				ctx.moveTo(h.x - 10, h.y);
+				ctx.lineTo(h.x + h.w / 2, h.y - 36);
+				ctx.lineTo(h.x + h.w + 10, h.y);
+				ctx.closePath();
+				ctx.fillStyle = h.roof;
+				ctx.fill();
+				// window
+				ctx.fillStyle = "#bfe6f5";
+				ctx.fillRect(h.x + 12, h.y + 16, 18, 16);
+				ctx.strokeStyle = "#fff";
+				ctx.lineWidth = 1.5;
+				ctx.strokeRect(h.x + 12, h.y + 16, 18, 16);
+				// door
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(h.door.x, h.door.y, h.door.w, h.door.h);
+				ctx.fillStyle = "#ffd98a";
+				ctx.beginPath();
+				ctx.arc(
+					h.door.x + h.door.w - 4,
+					h.door.y + h.door.h / 2,
+					1.4,
+					0,
+					Math.PI * 2,
+				);
+				ctx.fill();
+				if (h.label) {
+					ctx.fillStyle = "#fff";
+					ctx.font = "10px 'Baloo 2', sans-serif";
+					ctx.textAlign = "center";
+					ctx.fillText(h.label, h.x + h.w / 2, h.y - 16);
+					ctx.textAlign = "left";
+				}
+			}
+			function drawVillagerHouse(h, v) {
+				ctx.fillStyle = "#fffaf0";
+				ctx.fillRect(h.x, h.y, h.w, h.h);
+				ctx.strokeStyle = "#d8c8ad";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(h.x, h.y, h.w, h.h);
+				ctx.beginPath();
+				ctx.moveTo(h.x - 8, h.y);
+				ctx.lineTo(h.x + h.w / 2, h.y - 30);
+				ctx.lineTo(h.x + h.w + 8, h.y);
+				ctx.closePath();
+				ctx.fillStyle = h.roof;
+				ctx.fill();
+				// round window
+				ctx.beginPath();
+				ctx.arc(h.x + h.w / 2, h.y + 18, 9, 0, Math.PI * 2);
+				ctx.fillStyle = "#bfe6f5";
+				ctx.fill();
+				ctx.strokeStyle = "#fff";
+				ctx.lineWidth = 1.5;
+				ctx.stroke();
+				// door
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(h.door.x, h.door.y, h.door.w, h.door.h);
+				if (v) {
+					ctx.fillStyle = "#8a7a6e";
+					ctx.font = "10px 'Baloo 2', sans-serif";
+					ctx.textAlign = "center";
+					ctx.fillText(v.name + "'s Home", h.x + h.w / 2, h.y - 8);
+					ctx.textAlign = "left";
+				}
+			}
+			function drawVillager(v) {
+				ctx.save();
+				ctx.translate(v.x, v.y);
+				ctx.beginPath();
+				ctx.ellipse(0, 15, 12, 5, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(0,0,0,0.18)";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(0, 5, 11, 10, 0, 0, Math.PI * 2);
+				ctx.fillStyle = v.color;
+				ctx.fill();
+				ctx.font = "20px sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText(v.species, 0, -2);
+				ctx.textAlign = "left";
+				ctx.restore();
+			}
+			function drawFruitTree(t) {
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(t.x - 5, t.y - 4, 10, 22);
+				ctx.beginPath();
+				ctx.arc(t.x, t.y - 22, 24, 0, Math.PI * 2);
+				ctx.fillStyle = "#3f9a5f";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(t.x - 8, t.y - 30, 17, 0, Math.PI * 2);
+				ctx.fillStyle = "#56b876";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(t.x + 10, t.y - 28, 14, 0, Math.PI * 2);
+				ctx.fillStyle = "#56b876";
+				ctx.fill();
+				if (t.hasFruit) {
+					const emoji =
+						(SETTINGS.fruitSpecies.find((f) => f.name === t.fruit) || {})
+							.emoji || "🍎";
+					ctx.font = "14px sans-serif";
+					ctx.textAlign = "center";
+					ctx.fillText(emoji, t.x - 9, t.y - 26);
+					ctx.fillText(emoji, t.x + 9, t.y - 18);
+					ctx.fillText(emoji, t.x, t.y - 36);
+					ctx.textAlign = "left";
+				}
+			}
+			function drawShop() {
+				const { x, y, w, h } = SHOP;
+				ctx.fillStyle = "#fff3e9";
+				ctx.fillRect(x, y, w, h);
+				ctx.strokeStyle = "#caa97a";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(x, y, w, h);
+				ctx.beginPath();
+				ctx.moveTo(x - 12, y);
+				ctx.lineTo(x + w / 2, y - 42);
+				ctx.lineTo(x + w + 12, y);
+				ctx.closePath();
+				ctx.fillStyle = SHOP.roof;
+				ctx.fill();
+				// awning stripes
+				ctx.save();
+				ctx.beginPath();
+				ctx.rect(x - 4, y, w + 8, 14);
+				ctx.clip();
+				for (let i = -1; i < 8; i++) {
+					ctx.fillStyle = i % 2 === 0 ? "#fff" : SHOP.roof;
+					ctx.beginPath();
+					ctx.moveTo(x - 4 + i * 16, y);
+					ctx.lineTo(x - 4 + i * 16 + 16, y);
+					ctx.lineTo(x - 4 + i * 16 + 8, y + 14);
+					ctx.lineTo(x - 4 + i * 16 - 8, y + 14);
+					ctx.closePath();
+					ctx.fill();
+				}
+				ctx.restore();
+				// window display
+				ctx.fillStyle = "#bfe6f5";
+				ctx.fillRect(x + 12, y + 24, w - 24, 28);
+				ctx.strokeStyle = "#fff";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(x + 12, y + 24, w - 24, 28);
+				ctx.font = "16px sans-serif";
+				ctx.fillText("👒", x + 20, y + 44);
+				ctx.fillText("🎀", x + 48, y + 44);
+				ctx.fillText("🧢", x + 76, y + 44);
+				// door
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(SHOP_DOOR.x, SHOP_DOOR.y, SHOP_DOOR.w, SHOP_DOOR.h);
+				ctx.fillStyle = "#ffd98a";
+				ctx.beginPath();
+				ctx.arc(
+					SHOP_DOOR.x + SHOP_DOOR.w - 5,
+					SHOP_DOOR.y + SHOP_DOOR.h / 2,
+					1.6,
+					0,
+					Math.PI * 2,
+				);
+				ctx.fill();
+				ctx.fillStyle = "#fff";
+				ctx.font = "12px 'Baloo 2', sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText("Maple's Mercantile", x + w / 2, y - 18);
+				ctx.textAlign = "left";
+			}
+			function drawWelcomeSign() {
+				ctx.save();
+				ctx.translate(WELCOME_SIGN.x, WELCOME_SIGN.y);
+				ctx.fillStyle = "rgba(0,0,0,0.15)";
+				ctx.beginPath();
+				ctx.ellipse(0, 24, 16, 5, 0, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "#a9744a";
+				ctx.fillRect(-3, -10, 6, 36);
+				ctx.fillStyle = "#fffaf0";
+				roundRect(-32, -34, 64, 32, 6, true);
+				ctx.strokeStyle = "#7c5230";
+				ctx.lineWidth = 3;
+				roundRect(-32, -34, 64, 32, 6, false, true);
+				ctx.fillStyle = "#4a3b32";
+				ctx.font = "10px 'Baloo 2', sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText("🏝️ Welcome!", 0, -20);
+				ctx.font = "8px 'Quicksand', sans-serif";
+				ctx.fillText("to the island", 0, -8);
+				ctx.textAlign = "left";
+				ctx.restore();
+			}
+			function drawBulletinBoard() {
+				ctx.save();
+				ctx.translate(BULLETIN.x, BULLETIN.y);
+				ctx.fillStyle = "rgba(0,0,0,0.15)";
+				ctx.beginPath();
+				ctx.ellipse(0, 30, 18, 5, 0, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "#a9744a";
+				ctx.fillRect(-16, -8, 5, 40);
+				ctx.fillRect(11, -8, 5, 40);
+				ctx.fillStyle = "#caa06a";
+				roundRect(-26, -36, 52, 38, 4, true);
+				ctx.strokeStyle = "#8a5a3a";
+				ctx.lineWidth = 3;
+				roundRect(-26, -36, 52, 38, 4, false, true);
+				// pinned notices
+				ctx.fillStyle = "#fffdf6";
+				roundRect(-20, -30, 18, 12, 2, true);
+				roundRect(2, -30, 18, 12, 2, true);
+				roundRect(-20, -14, 40, 10, 2, true);
+				ctx.fillStyle = "#f06d92";
+				ctx.beginPath();
+				ctx.arc(-11, -27, 1.6, 0, Math.PI * 2);
+				ctx.arc(11, -27, 1.6, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "#fff";
+				ctx.font = "10px 'Baloo 2', sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText("📋 Notices", 0, 12);
+				ctx.textAlign = "left";
+				ctx.restore();
+			}
+			function drawMuseum() {
+				const { x, y, w, h } = MUSEUM;
+				ctx.fillStyle = "#fdf3e3";
+				ctx.fillRect(x, y, w, h);
+				ctx.strokeStyle = "#caa97a";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(x, y, w, h);
+				ctx.beginPath();
+				ctx.moveTo(x - 10, y);
+				ctx.lineTo(x + w / 2, y - 40);
+				ctx.lineTo(x + w + 10, y);
+				ctx.closePath();
+				ctx.fillStyle = "#5d8a6b";
+				ctx.fill();
+				ctx.fillStyle = "#8a5a3a";
+				ctx.fillRect(
+					MUSEUM_DOOR.x,
+					MUSEUM_DOOR.y,
+					MUSEUM_DOOR.w,
+					MUSEUM_DOOR.h,
+				);
+				ctx.fillStyle = "#fff";
+				ctx.font = "11px 'Baloo 2', sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText("Museum", x + w / 2, y - 16);
+				ctx.textAlign = "left";
+			}
+			function drawNPC() {
+				ctx.save();
+				ctx.translate(NPC.x, NPC.y);
+				ctx.beginPath();
+				ctx.ellipse(0, 16, 13, 5, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(0,0,0,0.18)";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(0, 6, 12, 11, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "#c9a876";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(0, -10, 11, 0, Math.PI * 2);
+				ctx.fillStyle = "#e8c79a";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(-9, -19, 5, 0, Math.PI * 2);
+				ctx.arc(9, -19, 5, 0, Math.PI * 2);
+				ctx.fillStyle = "#c9a876";
+				ctx.fill();
+				ctx.fillStyle = "#4a3b32";
+				ctx.beginPath();
+				ctx.arc(-4, -10, 1.6, 0, Math.PI * 2);
+				ctx.arc(4, -10, 1.6, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+			function drawBridge(b) {
+				ctx.fillStyle = "#a9744a";
+				ctx.fillRect(b.x - 8, b.y, b.w + 16, b.h);
+				ctx.strokeStyle = "#7c5230";
+				ctx.lineWidth = 2;
+				for (let p = 0; p < b.h; p += 10) {
+					ctx.beginPath();
+					ctx.moveTo(b.x - 8, b.y + p);
+					ctx.lineTo(b.x + b.w + 8, b.y + p);
+					ctx.stroke();
+				}
+				ctx.fillStyle = "#7c5230";
+				ctx.fillRect(b.x - 10, b.y - 4, 4, b.h + 8);
+				ctx.fillRect(b.x + b.w + 6, b.y - 4, 4, b.h + 8);
+			}
+			function drawDock() {
+				ctx.fillStyle = "#a9744a";
+				ctx.fillRect(DOCK.x, DOCK.y, DOCK.w, DOCK.h);
+				ctx.strokeStyle = "#7c5230";
+				ctx.lineWidth = 2;
+				for (let p = 0; p < DOCK.h; p += 12) {
+					ctx.beginPath();
+					ctx.moveTo(DOCK.x, DOCK.y + p);
+					ctx.lineTo(DOCK.x + DOCK.w, DOCK.y + p);
+					ctx.stroke();
+				}
+			}
+			function drawBeachDecor() {
+				BEACH_DECOR.forEach((d) => {
+					ctx.save();
+					ctx.translate(d.x, d.y);
+					if (d.type === "umbrella") {
+						ctx.fillStyle = "#a9744a";
+						ctx.fillRect(-1.5, -2, 3, 26);
+						ctx.beginPath();
+						ctx.arc(0, -2, 16, Math.PI, 0);
+						ctx.fillStyle = "#ff9eb8";
+						ctx.fill();
+						ctx.beginPath();
+						ctx.arc(-8, -2, 8, Math.PI, 0);
+						ctx.fillStyle = "#fff";
+						ctx.fill();
+						ctx.beginPath();
+						ctx.arc(8, -2, 8, Math.PI, 0);
+						ctx.fillStyle = "#fff";
+						ctx.fill();
+					} else if (d.type === "sandcastle") {
+						ctx.fillStyle = "#e8c98a";
+						ctx.fillRect(-14, -10, 28, 12);
+						ctx.fillRect(-14, -20, 6, 10);
+						ctx.fillRect(8, -20, 6, 10);
+						ctx.fillRect(-3, -24, 6, 14);
+					} else if (d.type === "shells") {
+						["#ffd76a", "#ff9eb8", "#a6d8ff"].forEach((c, i) => {
+							ctx.beginPath();
+							ctx.arc(i * 8 - 8, 0, 3.5, 0, Math.PI * 2);
+							ctx.fillStyle = c;
+							ctx.fill();
+						});
+					}
+					ctx.restore();
+				});
+			}
+			function roundRectPath(x, y, w, h, r) {
+				ctx.beginPath();
+				ctx.moveTo(x + r, y);
+				ctx.arcTo(x + w, y, x + w, y + h, r);
+				ctx.arcTo(x + w, y + h, x, y + h, r);
+				ctx.arcTo(x, y + h, x, y, r);
+				ctx.arcTo(x, y, x + w, y, r);
+				ctx.closePath();
+			}
+			function drawLetter(n) {
+				n.bob += 0.05;
+				const bobY = Math.sin(n.bob) * 4;
+				const x = n.x,
+					y = n.y + bobY;
+				ctx.beginPath();
+				ctx.arc(x, y + 6, 18, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(255, 220, 150, 0.35)";
+				ctx.fill();
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.fillStyle = "#fff8ef";
+				ctx.strokeStyle = "#f06d92";
+				ctx.lineWidth = 2;
+				roundRectPath(-14, -10, 28, 20, 3);
+				ctx.fill();
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(-14, -10);
+				ctx.lineTo(0, 4);
+				ctx.lineTo(14, -10);
+				ctx.stroke();
+				ctx.restore();
+			}
+			function drawPlayer() {
+				const { x, y } = player;
+				const bob = player.moving ? Math.sin(player.frame * 6) * 2 : 0;
+				ctx.save();
+				ctx.translate(x, y + bob);
+				ctx.beginPath();
+				ctx.ellipse(0, 16, 13, 5, 0, 0, Math.PI * 2);
+				ctx.fillStyle = "rgba(0,0,0,0.18)";
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(0, 6, 12, 11, 0, 0, Math.PI * 2);
+				ctx.fillStyle = SETTINGS.playerColor;
+				ctx.fill();
+				ctx.beginPath();
+				ctx.arc(0, -10, 11, 0, Math.PI * 2);
+				ctx.fillStyle = "#ffe2c2";
+				ctx.fill();
+				ctx.fillStyle = "#4a3b32";
+				let eyeOffX = 0,
+					eyeOffY = 0;
+				if (player.dir === "left") eyeOffX = -3;
+				if (player.dir === "right") eyeOffX = 3;
+				if (player.dir === "up") eyeOffY = -2;
+				if (player.dir === "down") eyeOffY = 1;
+				ctx.beginPath();
+				ctx.arc(-4 + eyeOffX, -10 + eyeOffY, 1.6, 0, Math.PI * 2);
+				ctx.arc(4 + eyeOffX, -10 + eyeOffY, 1.6, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "rgba(255,158,184,0.5)";
+				ctx.beginPath();
+				ctx.arc(-7, -6, 2.4, 0, Math.PI * 2);
+				ctx.arc(7, -6, 2.4, 0, Math.PI * 2);
+				ctx.fill();
+				if (equippedHat && equippedHat !== "none") {
+					const hat = SETTINGS.hats.find((h) => h.id === equippedHat);
+					if (hat) {
+						ctx.font = "18px sans-serif";
+						ctx.textAlign = "center";
+						ctx.fillText(hat.emoji, 0, -17);
+						ctx.textAlign = "left";
+					}
+				}
+				if (scene === "outside") {
+					const toolEmoji = {
+						net: "🥅",
+						rod: "🎣",
+						shovel: "⛏️",
+						hand: "✋",
+					}[currentTool];
+					ctx.font = "12px sans-serif";
+					ctx.fillStyle = "#000";
+					ctx.fillText(toolEmoji, 10, -2);
+				}
+				ctx.restore();
+			}
+
+			/* ── Rendering: inside a house ────────────────────────────────── */
+			function renderInside() {
+				const h = HOUSES[insideHouseIdx];
+				const accent = h ? h.roof : "#caa97a";
+				ctx.fillStyle = "#f3e9d8";
+				ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+				// outer room shadow
+				ctx.fillStyle = "rgba(0,0,0,0.08)";
+				ctx.fillRect(ROOM.x + 8, ROOM.y + 8, ROOM.w, ROOM.h);
+
+				// wall
+				ctx.fillStyle = shade(accent, 0.82);
+				ctx.fillRect(ROOM.x, ROOM.y, ROOM.w, ROOM.wallH);
+				ctx.fillStyle = shade(accent, 0.7);
+				ctx.fillRect(ROOM.x, ROOM.y + ROOM.wallH - 8, ROOM.w, 8);
+
+				// floor
+				ctx.fillStyle = "#caa06a";
+				ctx.fillRect(ROOM.x, ROOM.y + ROOM.wallH, ROOM.w, ROOM.h - ROOM.wallH);
+				ctx.strokeStyle = "rgba(120,80,40,0.18)";
+				ctx.lineWidth = 1;
+				for (let x = ROOM.x; x < ROOM.x + ROOM.w; x += 36) {
+					ctx.beginPath();
+					ctx.moveTo(x, ROOM.y + ROOM.wallH);
+					ctx.lineTo(x, ROOM.y + ROOM.h);
+					ctx.stroke();
+				}
+
+				// window
+				const winX = ROOM.x + ROOM.w / 2 - 60,
+					winY = ROOM.y + 30;
+				ctx.fillStyle = "#bfe6f5";
+				ctx.fillRect(winX, winY, 120, 70);
+				ctx.fillStyle = "rgba(255,255,255,0.5)";
+				ctx.beginPath();
+				ctx.arc(winX + 30, winY + 30, 14, 0, Math.PI * 2);
+				ctx.arc(winX + 55, winY + 35, 18, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = "#fff";
+				ctx.lineWidth = 5;
+				ctx.strokeRect(winX, winY, 120, 70);
+				ctx.beginPath();
+				ctx.moveTo(winX + 60, winY);
+				ctx.lineTo(winX + 60, winY + 70);
+				ctx.moveTo(winX, winY + 35);
+				ctx.lineTo(winX + 120, winY + 35);
+				ctx.lineWidth = 3;
+				ctx.stroke();
+
+				// little anniversary frame on the wall
+				ctx.save();
+				ctx.translate(ROOM.x + 70, ROOM.y + 50);
+				ctx.fillStyle = "#fff";
+				ctx.fillRect(-22, -16, 44, 32);
+				ctx.strokeStyle = accent;
+				ctx.lineWidth = 4;
+				ctx.strokeRect(-22, -16, 44, 32);
+				ctx.font = "20px sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillStyle = "#f06d92";
+				ctx.fillText("❤", 0, 7);
+				ctx.font = "9px 'Baloo 2', sans-serif";
+				ctx.fillStyle = "#8a7a6e";
+				ctx.fillText(SETTINGS.anniversaryLabel, 0, 26);
+				ctx.textAlign = "left";
+				ctx.restore();
+
+				// rug
+				ctx.beginPath();
+				ctx.ellipse(
+					ROOM.x + ROOM.w / 2,
+					ROOM.y + ROOM.wallH + 110,
+					130,
+					60,
+					0,
+					0,
+					Math.PI * 2,
+				);
+				ctx.fillStyle = shade(accent, 0.88);
+				ctx.fill();
+				ctx.strokeStyle = shade(accent, 0.6);
+				ctx.lineWidth = 3;
+				ctx.stroke();
+
+				drawFurnitureSet(h ? h.theme : 0, accent);
+
+				// exit mat
+				const matX = ROOM.x + ROOM.w / 2 - 36,
+					matY = ROOM.y + ROOM.h - 34;
+				ctx.fillStyle = "#fff";
+				roundRect(matX, matY, 72, 22, 6, true);
+				ctx.fillStyle = "#8a7a6e";
+				ctx.font = "11px 'Baloo 2', sans-serif";
+				ctx.textAlign = "center";
+				ctx.fillText("⬇ Exit", matX + 36, matY + 15);
+				ctx.textAlign = "left";
+
+				drawPlayer();
+			}
+
+			function shade(hex, lightness) {
+				const c = hex.replace("#", "");
+				const r = parseInt(c.substr(0, 2), 16),
+					g = parseInt(c.substr(2, 2), 16),
+					b = parseInt(c.substr(4, 2), 16);
+				const mix = (ch) => Math.round(ch + (255 - ch) * lightness);
+				return "rgb(" + mix(r) + "," + mix(g) + "," + mix(b) + ")";
+			}
+
+			function drawFurnitureSet(theme, accent) {
+				const baseY = ROOM.y + ROOM.wallH;
+				if (theme === 0) {
+					// bed
+					ctx.save();
+					ctx.translate(ROOM.x + 90, baseY + 60);
+					ctx.fillStyle = "#fff";
+					roundRect(-50, -10, 100, 60, 8, true);
+					ctx.fillStyle = accent;
+					roundRect(-50, -10, 100, 18, 8, true);
+					ctx.fillStyle = "#fff";
+					roundRect(-42, -4, 26, 18, 4, true);
+					ctx.restore();
+					// nightstand + lamp
+					ctx.save();
+					ctx.translate(ROOM.x + 170, baseY + 90);
+					ctx.fillStyle = "#caa97a";
+					ctx.fillRect(-14, -10, 28, 28);
+					ctx.fillStyle = "#ffd98a";
+					ctx.beginPath();
+					ctx.arc(0, -24, 9, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.restore();
+					// bookshelf
+					ctx.save();
+					ctx.translate(ROOM.x + ROOM.w - 90, baseY + 70);
+					ctx.fillStyle = "#a9744a";
+					ctx.fillRect(-30, -50, 60, 90);
+					["#ff9eb8", "#a6d8ff", "#ffd76a", "#9fe39e"].forEach((c, i) => {
+						ctx.fillStyle = c;
+						ctx.fillRect(-26 + i * 14, -42, 10, 30);
+					});
+					ctx.restore();
+				} else if (theme === 1) {
+					// dining table + chairs
+					ctx.save();
+					ctx.translate(ROOM.x + ROOM.w / 2, baseY + 110);
+					ctx.fillStyle = "#caa06a";
+					roundRect(-45, -28, 90, 56, 6, true);
+					ctx.fillStyle = accent;
+					[
+						[-60, 0],
+						[60, 0],
+					].forEach(([dx]) => {
+						roundRect(dx - 12, -14, 24, 28, 5, true);
+					});
+					ctx.restore();
+					// cupboard
+					ctx.save();
+					ctx.translate(ROOM.x + ROOM.w - 80, baseY + 60);
+					ctx.fillStyle = "#fff";
+					ctx.fillRect(-35, -45, 70, 80);
+					ctx.strokeStyle = accent;
+					ctx.lineWidth = 3;
+					ctx.strokeRect(-35, -45, 70, 80);
+					ctx.beginPath();
+					ctx.moveTo(0, -45);
+					ctx.lineTo(0, 35);
+					ctx.stroke();
+					ctx.restore();
+					// plant
+					drawPlant(ROOM.x + 70, baseY + 100);
+				} else {
+					// sofa
+					ctx.save();
+					ctx.translate(ROOM.x + 110, baseY + 95);
+					ctx.fillStyle = accent;
+					roundRect(-55, -25, 110, 50, 12, true);
+					ctx.fillStyle = shade(accent, 0.3);
+					roundRect(-55, -38, 18, 30, 8, true);
+					roundRect(37, -38, 18, 30, 8, true);
+					ctx.restore();
+					// coffee table
+					ctx.save();
+					ctx.translate(ROOM.x + 110, baseY + 150);
+					ctx.fillStyle = "#caa06a";
+					roundRect(-30, -10, 60, 20, 5, true);
+					ctx.restore();
+					// fireplace
+					ctx.save();
+					ctx.translate(ROOM.x + ROOM.w - 90, baseY + 70);
+					ctx.fillStyle = "#cfc4b4";
+					ctx.fillRect(-35, -50, 70, 90);
+					ctx.fillStyle = "#7a5634";
+					ctx.fillRect(-22, 10, 44, 30);
+					ctx.fillStyle = "#ffb259";
+					ctx.beginPath();
+					ctx.arc(0, 24, 9, 0, Math.PI * 2);
+					ctx.fill();
+					ctx.restore();
+					drawPlant(ROOM.x + ROOM.w - 200, baseY + 100);
+				}
+			}
+			function drawPlant(x, y) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.fillStyle = "#caa97a";
+				roundRect(-14, 0, 28, 22, 4, true);
+				ctx.fillStyle = "#4caf7d";
+				ctx.beginPath();
+				ctx.ellipse(-6, -10, 10, 16, 0.3, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(8, -8, 10, 16, -0.3, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.beginPath();
+				ctx.ellipse(0, -16, 9, 14, 0, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.restore();
+			}
+
+			/* ── Minimap ──────────────────────────────────────────────────── */
+			const minimap = document.getElementById("minimap");
+			const mctx = minimap.getContext("2d");
+			document.getElementById("minimap-wrap").classList.add("show");
+
+			// Keep the minimap from ever overlapping the HUD button stack,
+			// even if it wraps onto a third row on a narrow screen.
+			function positionMinimap() {
+				const hudTop = document.getElementById("hud-top");
+				const frame = document.getElementById("game-frame");
+				if (!hudTop || !frame) return;
+				const hudRect = hudTop.getBoundingClientRect();
+				const frameRect = frame.getBoundingClientRect();
+				const gap = 10;
+				const top = hudRect.bottom - frameRect.top + gap;
+				frame.style.setProperty("--minimap-top", top + "px");
+			}
+			window.addEventListener("resize", positionMinimap);
+			window.addEventListener("load", positionMinimap);
+			setTimeout(positionMinimap, 0);
+
+			function renderMinimap() {
+				const mw = minimap.width,
+					mh = minimap.height;
+				const sx = mw / WORLD_W,
+					sy = mh / WORLD_H;
+				mctx.clearRect(0, 0, mw, mh);
+				mctx.fillStyle = "#8fdc8d";
+				mctx.fillRect(0, 0, mw, mh);
+				mctx.fillStyle = "#6cc4e8";
+				mctx.fillRect(0, OCEAN_Y * sy, mw, mh - OCEAN_Y * sy);
+				mctx.fillRect(RIVER.x * sx, 0, RIVER.w * sx, RIVER.h * sy);
+				mctx.fillStyle = "#a9744a";
+				BRIDGES.forEach((b) =>
+					mctx.fillRect(b.x * sx, b.y * sy, b.w * sx, b.h * sy),
+				);
+				mctx.fillStyle = "#6cc4e8";
+				mctx.beginPath();
+				mctx.ellipse(
+					POND.x * sx,
+					POND.y * sy,
+					POND.rx * sx,
+					POND.ry * sy,
+					0,
+					0,
+					Math.PI * 2,
+				);
+				mctx.fill();
+				// orchard footprint, behind everything else in this area
+				mctx.fillStyle = "rgba(86,184,118,0.35)";
+				mctx.beginPath();
+				mctx.arc(560 * sx, 600 * sy, 220 * sx, 0, Math.PI * 2);
+				mctx.fill();
+				mctx.fillStyle = "#cdb98e";
+				mctx.beginPath();
+				mctx.arc(PLAZA.x * sx, PLAZA.y * sy, PLAZA.r * sx, 0, Math.PI * 2);
+				mctx.fill();
+				mctx.fillStyle = "#caa97a";
+				mctx.fillRect(
+					MUSEUM.x * sx,
+					MUSEUM.y * sy,
+					MUSEUM.w * sx,
+					MUSEUM.h * sy,
+				);
+				mctx.fillStyle = SHOP.roof;
+				mctx.fillRect(SHOP.x * sx, SHOP.y * sy, SHOP.w * sx, SHOP.h * sy);
+				HOUSES.forEach((h) => {
+					mctx.fillStyle = h.roof;
+					mctx.fillRect(h.x * sx, h.y * sy, h.w * sx, h.h * sy);
+				});
+				VILLAGER_HOUSES.forEach((h) => {
+					mctx.fillStyle = h.roof;
+					mctx.fillRect(h.x * sx, h.y * sy, h.w * sx, h.h * sy);
+				});
+				mctx.strokeStyle = "rgba(0,0,0,0.35)";
+				mctx.lineWidth = 1;
+				mctx.strokeRect(camera.x * sx, camera.y * sy, VIEW_W * sx, VIEW_H * sy);
+				mctx.fillStyle = SETTINGS.playerColor;
+				mctx.beginPath();
+				mctx.arc(player.x * sx, player.y * sy, 3, 0, Math.PI * 2);
+				mctx.fill();
+			}
+
+			/* ── Overlays ─────────────────────────────────────────────────── */
+			function openLetter(text) {
+				dialogOpen = true;
+				document.getElementById("letter-text").textContent = text;
+				document.getElementById("letter-overlay").classList.add("show");
+			}
+			document.getElementById("letter-close").onclick = () => {
+				document.getElementById("letter-overlay").classList.remove("show");
+				dialogOpen = false;
+			};
+			document.getElementById("book-btn").onclick = () => {
+				bookOpen = true;
+				const list = document.getElementById("book-list");
+				list.innerHTML = "";
+				NOTES.forEach((n, i) => {
+					const div = document.createElement("div");
+					div.className = "book-entry" + (n.collected ? "" : " locked");
+					div.textContent = n.collected
+						? n.text
+						: "💌 Letter " + (i + 1) + " — not found yet";
+					list.appendChild(div);
+				});
+				document.getElementById("book-overlay").classList.add("show");
+			};
+			document.getElementById("book-close").onclick = () => {
+				document.getElementById("book-overlay").classList.remove("show");
+				bookOpen = false;
+			};
+			function openMuseum() {
+				if (museumOpen) return;
+				museumOpen = true;
+				fillMuseumGrid("museum-fish", SETTINGS.fishSpecies, fishCaught);
+				fillMuseumGrid("museum-bugs", SETTINGS.bugSpecies, bugsCaught);
+				fillMuseumGrid("museum-fossils", SETTINGS.fossilSpecies, fossilsFound);
+				fillMuseumGrid("museum-fruit", SETTINGS.fruitSpecies, fruitCaught);
+				document.getElementById("museum-overlay").classList.add("show");
+			}
+			document.getElementById("museum-btn").onclick = openMuseum;
+			document.getElementById("museum-close").onclick = () => {
+				document.getElementById("museum-overlay").classList.remove("show");
+				museumOpen = false;
+			};
+			function fillMuseumGrid(id, species, caughtSet) {
+				const grid = document.getElementById(id);
+				grid.innerHTML = "";
+				species.forEach((s) => {
+					const got = caughtSet.has(s.name);
+					const div = document.createElement("div");
+					div.className = "museum-item" + (got ? "" : " locked");
+					div.innerHTML =
+						'<span class="emoji">' +
+						(got ? s.emoji : "❓") +
+						"</span>" +
+						(got ? s.name : "???");
+					grid.appendChild(div);
+				});
+			}
+
+			/* ── Shop: Maple's Mercantile ─────────────────────────────────── */
+			function openShop() {
+				if (shopOpen) return;
+				shopOpen = true;
+				document.getElementById("shop-line").textContent =
+					SETTINGS.shopkeeper.greeting;
+				renderShopGrid();
+				document.getElementById("shop-overlay").classList.add("show");
+			}
+			document.getElementById("shop-btn").onclick = openShop;
+			document.getElementById("shop-close").onclick = closeShop;
+			function closeShop() {
+				document.getElementById("shop-overlay").classList.remove("show");
+				shopOpen = false;
+			}
+			document.querySelectorAll(".shop-tab").forEach((btn) => {
+				btn.onclick = () => {
+					shopTab = btn.dataset.tab;
+					document
+						.querySelectorAll(".shop-tab")
+						.forEach((b) => b.classList.toggle("active", b === btn));
+					renderShopGrid();
+				};
+			});
+			function renderShopGrid() {
+				document.getElementById("shop-balance").textContent = bells;
+				const grid = document.getElementById("shop-grid");
+				grid.innerHTML = "";
+				const items =
+					shopTab === "hats" ? SETTINGS.hats : SETTINGS.outfitColors;
+				const ownedSet = shopTab === "hats" ? ownedHats : ownedOutfits;
+				const equippedId = shopTab === "hats" ? equippedHat : equippedOutfit;
+				items.forEach((item) => {
+					const owned = ownedSet.has(item.id);
+					const equipped = equippedId === item.id;
+					const div = document.createElement("div");
+					div.className =
+						"shop-item" +
+						(owned ? " owned" : "") +
+						(equipped ? " equipped" : "");
+					const visual =
+						shopTab === "hats"
+							? '<span class="hat-emoji">' + item.emoji + "</span>"
+							: '<span class="swatch" style="background:' +
+								item.hex +
+								'"></span>';
+					div.innerHTML =
+						visual +
+						'<span class="item-name">' +
+						item.name +
+						"</span>" +
+						(equipped
+							? '<span class="item-tag">Equipped</span>'
+							: owned
+								? '<span class="item-tag">Owned — tap to wear</span>'
+								: '<span class="item-price">🔔 ' + item.price + "</span>");
+					div.onclick = () => buyOrEquip(shopTab, item);
+					grid.appendChild(div);
+				});
+			}
+			function buyOrEquip(tab, item) {
+				const ownedSet = tab === "hats" ? ownedHats : ownedOutfits;
+				const line = document.getElementById("shop-line");
+				if (ownedSet.has(item.id)) {
+					if (tab === "hats") equippedHat = item.id;
+					else {
+						equippedOutfit = item.id;
+						SETTINGS.playerColor = colorForOutfit(item.id);
+					}
+					line.textContent =
+						"Looking good! That " + item.name + " suits you.";
+					renderShopGrid();
+					return;
+				}
+				if (item.price > bells) {
+					line.textContent = SETTINGS.shopkeeper.lowFundsLine;
+					showToast("Not enough Bells yet — keep fishing and digging!");
+					return;
+				}
+				spendBells(item.price);
+				ownedSet.add(item.id);
+				if (tab === "hats") equippedHat = item.id;
+				else {
+					equippedOutfit = item.id;
+					SETTINGS.playerColor = colorForOutfit(item.id);
+				}
+				const lines = SETTINGS.shopkeeper.boughtLines;
+				line.textContent = lines[Math.floor(Math.random() * lines.length)];
+				showToast("Bought " + item.name + "!");
+				renderShopGrid();
+			}
+
+			/* ── Bulletin board ───────────────────────────────────────────── */
+			function openBulletin() {
+				if (bulletinOpen) return;
+				bulletinOpen = true;
+				const list = document.getElementById("bulletin-list");
+				list.innerHTML = "";
+				SETTINGS.bulletinNotices.forEach((text) => {
+					const div = document.createElement("div");
+					div.className = "bulletin-pin";
+					div.textContent = text;
+					list.appendChild(div);
+				});
+				document.getElementById("bulletin-overlay").classList.add("show");
+			}
+			document.getElementById("bulletin-btn").onclick = openBulletin;
+			document.getElementById("bulletin-close").onclick = closeBulletin;
+			function closeBulletin() {
+				document.getElementById("bulletin-overlay").classList.remove("show");
+				bulletinOpen = false;
+			}
+
+			/* ── Welcome sign ─────────────────────────────────────────────── */
+			function openSign() {
+				if (signOpen) return;
+				signOpen = true;
+				document.getElementById("sign-title").textContent =
+					SETTINGS.welcomeSignTitle;
+				document.getElementById("sign-text").textContent =
+					SETTINGS.welcomeSignText;
+				document.getElementById("sign-overlay").classList.add("show");
+			}
+			document.getElementById("sign-close").onclick = closeSign;
+			function closeSign() {
+				document.getElementById("sign-overlay").classList.remove("show");
+				signOpen = false;
+			}
+
+			/* ── Villager dialogue ────────────────────────────────────────── */
+			let lastVillagerGreeted = null;
+			function openVillager(v) {
+				if (villagerOpen) return;
+				if (lastVillagerGreeted === v.name) return;
+				lastVillagerGreeted = v.name;
+				villagerOpen = true;
+				document.getElementById("villager-emoji").textContent = v.species;
+				document.getElementById("villager-name").textContent = v.name;
+				document.getElementById("villager-text").textContent =
+					v.lines[Math.floor(Math.random() * v.lines.length)];
+				document.getElementById("villager-overlay").classList.add("show");
+			}
+			document.getElementById("villager-close").onclick = closeVillager;
+			function closeVillager() {
+				document.getElementById("villager-overlay").classList.remove("show");
+				villagerOpen = false;
+				setTimeout(() => (lastVillagerGreeted = null), 1200);
+			}
+
+			/* ── Click outside any popup card to close it ───────────────────
+			   Every overlay closes via its own close button AND by clicking
+			   anywhere on the dimmed backdrop outside the card itself. */
+			document.querySelectorAll(".overlay").forEach((overlay) => {
+				overlay.addEventListener("click", (e) => {
+					if (e.target !== overlay) return; // only the backdrop, not the card
+					if (overlay.id === "letter-overlay") {
+						overlay.classList.remove("show");
+						dialogOpen = false;
+					} else if (overlay.id === "book-overlay") {
+						overlay.classList.remove("show");
+						bookOpen = false;
+					} else if (overlay.id === "museum-overlay") {
+						overlay.classList.remove("show");
+						museumOpen = false;
+					} else if (overlay.id === "shop-overlay") {
+						closeShop();
+					} else if (overlay.id === "bulletin-overlay") {
+						closeBulletin();
+					} else if (overlay.id === "sign-overlay") {
+						closeSign();
+					} else if (overlay.id === "villager-overlay") {
+						closeVillager();
+					}
+					// celebrate-overlay is intentionally excluded — that one
+					// is a deliberate finale, not a dismissible popup.
+				});
+			});
+
+			/* ── Celebration + confetti ───────────────────────────────────── */
+			function celebrate() {
+				document.getElementById("celebrate-overlay").classList.add("show");
+				runConfetti();
+			}
+			document.getElementById("celebrate-restart").onclick = () => {
+				document.getElementById("celebrate-overlay").classList.remove("show");
+				replayLetters();
+			};
+			function runConfetti() {
+				const cv = document.getElementById("confetti-canvas");
+				const frame = document.getElementById("game-frame");
+				cv.width = frame.clientWidth;
+				cv.height = frame.clientHeight;
+				const cctx = cv.getContext("2d");
+				const colors = ["#ff9eb8", "#ffd76a", "#a6d8ff", "#9fe39e", "#fff"];
+				const pieces = Array.from({ length: 130 }, () => ({
+					x: Math.random() * cv.width,
+					y: -20 - Math.random() * cv.height * 0.5,
+					vy: 2 + Math.random() * 3,
+					vx: -1 + Math.random() * 2,
+					size: 4 + Math.random() * 5,
+					color: colors[Math.floor(Math.random() * colors.length)],
+					rot: Math.random() * Math.PI,
+					vr: -0.1 + Math.random() * 0.2,
+				}));
+				let frames = 0;
+				function tick() {
+					cctx.clearRect(0, 0, cv.width, cv.height);
+					pieces.forEach((p) => {
+						p.x += p.vx;
+						p.y += p.vy;
+						p.rot += p.vr;
+						cctx.save();
+						cctx.translate(p.x, p.y);
+						cctx.rotate(p.rot);
+						cctx.fillStyle = p.color;
+						cctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+						cctx.restore();
+					});
+					frames++;
+					if (frames < 220) requestAnimationFrame(tick);
+					else cctx.clearRect(0, 0, cv.width, cv.height);
+				}
+				tick();
+			}
+
+			/* ── Init ─────────────────────────────────────────────────────── */
+			resetGame();
+			positionMinimap();
+			step();
+		</script>
+	</body>
+</html>
