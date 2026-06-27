@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Happy 3rd Anniversary, Player 2! 💕</title>
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Fredoka+One&family=Press+Start+2P&family=Quicksand:wght@500;700&display=swap");
+
+			* {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			body {
+				background: linear-gradient(
+					135deg,
+					#fff1f2 0%,
+					#fef3c7 50%,
+					#e0f2fe 100%
+				);
+				font-family: "Quicksand", sans-serif;
+				height: 100vh;
+				width: 100vw;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+				/* STRICTLY prevent scrollbars from appearing/disappearing */
+				overflow: hidden;
+				position: relative;
+			}
+
+			/* --- SAFE CONFETTI ZONE (No Edge Spilling) --- */
+			.confetti-container {
+				position: absolute;
+				top: 0;
+				left: 5vw; /* Padding from left edge */
+				right: 5vw; /* Padding from right edge */
+				height: 100%;
+				overflow: hidden;
+				pointer-events: none;
+				z-index: 1;
+			}
+
+			.confetti {
+				position: absolute;
+				top: -30px;
+				font-size: 1.6rem;
+				animation: fall linear infinite;
+				user-select: none;
+			}
+
+			/* --- HEADER & CELEBRATION BANNER --- */
+			header {
+				text-align: center;
+				margin-bottom: 30px;
+				z-index: 10;
+				position: relative;
+			}
+
+			.anniversary-badge {
+				background: linear-gradient(135deg, #ff7675, #ff7675);
+				border: 3px solid #fff;
+				color: white;
+				font-family: "Press Start 2P", cursive;
+				font-size: 0.7rem;
+				padding: 10px 20px;
+				border-radius: 50px;
+				display: inline-block;
+				margin-bottom: 15px;
+				box-shadow: 0 6px 20px rgba(255, 118, 117, 0.4);
+				animation:
+					pulse-glow 1.5s infinite alternate,
+					tilt-dance 2s ease-in-out infinite alternate;
+			}
+
+			h1 {
+				font-family: "Fredoka One", cursive;
+				color: #ff6b81;
+				font-size: 3rem;
+				text-shadow:
+					3px 3px 0px #fff,
+					5px 5px 0px rgba(0, 0, 0, 0.05);
+				margin-bottom: 8px;
+				animation: titlesway 4s ease-in-out infinite;
+			}
+
+			.subtitle {
+				color: #57606f;
+				font-weight: 700;
+				font-size: 1.2rem;
+				background: rgba(255, 255, 255, 0.6);
+				padding: 4px 16px;
+				border-radius: 20px;
+				display: inline-block;
+			}
+
+			/* --- PORTAL CONTAINER --- */
+			.portal-container {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+				gap: 30px;
+				max-width: 1100px;
+				width: 100%;
+				z-index: 10;
+				padding: 10px;
+			}
+
+			/* Card Base Layout */
+			.portal-card {
+				text-decoration: none;
+				color: inherit;
+				border-radius: 32px;
+				padding: 40px 25px;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				text-align: center;
+				transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+				box-shadow: 0 12px 24px rgba(0, 0, 0, 0.04);
+				position: relative;
+				overflow: hidden;
+				border: 5px solid transparent;
+			}
+
+			.icon-wrapper {
+				font-size: 4.8rem;
+				margin-bottom: 15px;
+				display: inline-block;
+				filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+			}
+
+			.card-title {
+				font-size: 1.4rem;
+				margin-bottom: 12px;
+				letter-spacing: -0.5px;
+			}
+
+			.card-desc {
+				font-size: 0.95rem;
+				line-height: 1.5;
+				font-weight: 500;
+			}
+
+			/* Floating Offsets */
+			.ac-theme {
+				animation: floatA 5s ease-in-out infinite;
+			}
+			.fw-theme {
+				animation: floatB 5.5s ease-in-out infinite;
+			}
+			.mc-theme {
+				animation: floatC 6s ease-in-out infinite;
+			}
+
+			.portal-card:hover {
+				transform: translateY(-15px) scale(1.04) !important;
+				box-shadow: 0 25px 40px rgba(255, 107, 129, 0.2);
+				animation-play-state: paused;
+			}
+
+			/* --- EXTRA GAME FLAIR & CUTENESS --- */
+
+			/* 1. Animal Crossing (cross.html) */
+			.ac-theme {
+				background: #f3faf0;
+				border-color: #b2e3bd;
+				color: #3b6326;
+			}
+			.ac-theme .card-title {
+				font-family: "Fredoka One", cursive;
+				color: #274d14;
+			}
+			.ac-theme .icon-wrapper {
+				animation: ac-wiggle 3s ease-in-out infinite;
+			}
+			.ac-theme:hover {
+				background: #eafdff;
+				border-color: #ffb7c5;
+			} /* Turns love-pink on hover */
+			.ac-theme:hover .icon-wrapper {
+				animation: rapid-bounce 0.4s ease infinite alternate;
+			}
+			.ac-theme::after {
+				content: "💝";
+				position: absolute;
+				bottom: 10px;
+				right: 15px;
+				font-size: 1.2rem;
+				opacity: 0.3;
+			}
+
+			/* 2. Fireboy & Watergirl (flix.html) */
+			.fw-theme {
+				background: linear-gradient(135deg, #fff2f2 0%, #e8f8ff 100%);
+				border-color: #ffb3ba;
+				color: #2c3e50;
+				border-image: linear-gradient(45deg, #ff6b6b, #ff7675, #74b9ff, #0984e3)
+					1; /* Synced element borders */
+				border-radius: 32px;
+			}
+			.fw-theme .card-title {
+				font-family: "Press Start 2P", cursive;
+				font-size: 0.95rem;
+				color: #222f3e;
+				text-shadow: 2px 2px 0px #ffccd2;
+			}
+			.fw-theme .icon-wrapper {
+				animation: pulse-heart 2s infinite;
+			}
+			.fw-theme:hover .icon-wrapper {
+				animation: element-spin 0.5s linear infinite;
+			}
+
+			/* 3. Minecraft (fy.html) */
+			.mc-theme {
+				background: #4d3319; /* Cocoa Brown */
+				background-image:
+					linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+					linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+				background-size: 20px 20px;
+				border: 5px solid #74b33b; /* Lime Grass Top */
+				color: #fff;
+				border-radius: 4px; /* Pixel Block style */
+			}
+			.mc-theme .card-title {
+				font-family: "Press Start 2P", cursive;
+				font-size: 1.05rem;
+				color: #ffff55;
+				text-shadow: 2px 2px 0px #3c2a00;
+			}
+			.mc-theme .card-desc {
+				color: #f1f2f6;
+			}
+			.mc-theme .icon-wrapper {
+				animation: mine-bob 2s ease-in-out infinite alternate;
+			}
+			.mc-theme:hover {
+				border-color: #ff4757;
+			} /* Heart Red on hover */
+			.mc-theme:hover .icon-wrapper {
+				animation: block-shatter 0.15s infinite;
+			}
+
+			/* --- ALL THE ANIMATIONS KEYFRAMES --- */
+
+			/* Smooth Floating Loops */
+			@keyframes floatA {
+				0%,
+				100% {
+					transform: translateY(0);
+				}
+				50% {
+					transform: translateY(-10px);
+				}
+			}
+			@keyframes floatB {
+				0%,
+				100% {
+					transform: translateY(0);
+				}
+				50% {
+					transform: translateY(-14px);
+				}
+			}
+			@keyframes floatC {
+				0%,
+				100% {
+					transform: translateY(0);
+				}
+				50% {
+					transform: translateY(-8px);
+				}
+			}
+
+			/* Title Effects */
+			@keyframes titlesway {
+				0%,
+				100% {
+					transform: scale(1) rotate(-1deg);
+				}
+				50% {
+					transform: scale(1.03) rotate(1deg);
+				}
+			}
+			@keyframes pulse-glow {
+				0% {
+					box-shadow: 0 4px 10px rgba(255, 118, 117, 0.4);
+				}
+				100% {
+					box-shadow: 0 4px 25px rgba(255, 118, 117, 0.8);
+				}
+			}
+			@keyframes tilt-dance {
+				0% {
+					transform: rotate(-4deg);
+				}
+				100% {
+					transform: rotate(4deg);
+				}
+			}
+
+			/* Cute Character Micro-Animations */
+			@keyframes ac-wiggle {
+				0%,
+				100% {
+					transform: rotate(-5deg);
+				}
+				50% {
+					transform: rotate(5deg);
+				}
+			}
+			@keyframes rapid-bounce {
+				0% {
+					transform: translateY(0) scale(1.15);
+				}
+				100% {
+					transform: translateY(-16px) scale(1.15);
+				}
+			}
+			@keyframes pulse-heart {
+				0%,
+				100% {
+					transform: scale(1);
+				}
+				50% {
+					transform: scale(1.15);
+				}
+			}
+			@keyframes element-spin {
+				0% {
+					transform: scale(1.2) rotate(0deg);
+				}
+				100% {
+					transform: scale(1.2) rotate(360deg);
+				}
+			}
+			@keyframes mine-bob {
+				0% {
+					transform: translateY(0) rotate(-5deg);
+				}
+				100% {
+					transform: translateY(-10px) rotate(10deg);
+				}
+			}
+			@keyframes block-shatter {
+				0% {
+					transform: translate(1px, 1px);
+				}
+				100% {
+					transform: translate(-1px, -1px);
+				}
+			}
+
+			/* Falling Emojis Logic */
+			@keyframes fall {
+				0% {
+					transform: translateY(-40px) rotate(0deg);
+					opacity: 0;
+				}
+				10% {
+					opacity: 0.8;
+				}
+				90% {
+					opacity: 0.8;
+				}
+				100% {
+					transform: translateY(105vh) rotate(360deg);
+					opacity: 0;
+				}
+			}
+
+			@media (max-width: 850px) {
+				body {
+					height: auto;
+					overflow-y: auto;
+					padding: 40px 20px;
+				}
+				.confetti-container {
+					display: none;
+				} /* Hide on mobile to protect scrolling layout */
+				.portal-container {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Bounded Confetti Fall (Will never push screen width/height) -->
+		<div class="confetti-container" id="confettiBox"></div>
+
+		<header>
+			<div class="anniversary-badge">💖 3 YEARS WITH PLAYER 2 💖</div>
+			<h1>Our Cute Universe</h1>
+			<p class="subtitle">
+				Happy 3rd Anniversary! Pick a lobby to load into 🥰
+			</p>
+		</header>
+
+		<main class="portal-container">
+			<!-- Animal Crossing Link -->
+			<a href="cross.html" class="portal-card ac-theme">
+				<div class="icon-wrapper">🍃</div>
+				<h2 class="card-title">Island Adventures</h2>
+				<p class="card-desc">
+					Welcome home, Mayor! Shake some trees, talk to our favorite neighbors,
+					and wander our cozy 3-year custom game board.
+				</p>
+			</a>
+
+			<!-- Fireboy & Watergirl Link -->
+			<a href="flix.html" class="portal-card fw-theme">
+				<div class="icon-wrapper">❤️🔥💧</div>
+				<h2 class="card-title">THE PERFECT TEAM</h2>
+				<p class="card-desc">
+					Like Fire & Water, we match perfectly. Crack open the memory vault
+					inside this cute Netflix-style movie & date timeline hub.
+				</p>
+			</a>
+
+			<!-- Minecraft Link -->
+			<a href="fy.html" class="portal-card mc-theme">
+				<div class="icon-wrapper">🧱💎</div>
+				<h2 class="card-title">OUR SAVED WORLD</h2>
+				<p class="card-desc">
+					Crafted piece by piece. Insert a music disc into the 8-bit jukebox
+					jukebox dashboard and listen to our favorite dynamic lo-fi playlist.
+				</p>
+			</a>
+		</main>
+
+		<script>
+			// Generate safe inside-the-box falling elements
+			const container = document.getElementById("confettiBox");
+			const icons = ["❤️", "✨", "🌸", "🧸", "💖", "⭐", "🐾"];
+
+			for (let i = 0; i < 22; i++) {
+				let spark = document.createElement("div");
+				spark.classList.add("confetti");
+				spark.innerText = icons[Math.floor(Math.random() * icons.length)];
+
+				// Randomize position securely within the 5vw - 95vw margin space
+				spark.style.left = Math.random() * 100 + "%";
+				spark.style.animationDuration = Math.random() * 3 + 4 + "s";
+				spark.style.animationDelay = Math.random() * 5 + "s";
+
+				// Give various font sizes for cute deep-field effect
+				spark.style.fontSize = Math.random() * 0.6 + 1.2 + "rem";
+
+				container.appendChild(spark);
+			}
+		</script>
+	</body>
+</html>
