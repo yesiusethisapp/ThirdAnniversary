@@ -1,0 +1,3171 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>[AR]Flix</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			/* ─── Reset & Variables ─────────────────────────────────────────── */
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--bg: #141414;
+				--red: #e50914;
+				--red-dark: #b20710;
+				--white: #fff;
+				--gray: #808080;
+				--card-bg: #1f1f1f;
+				--modal-bg: #181818;
+				--font-display: "Bebas Neue", sans-serif;
+				--font-body: "Montserrat", sans-serif;
+				--transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+			html {
+				scroll-behavior: smooth;
+			}
+			body {
+				background: var(--bg);
+				color: var(--white);
+				font-family: var(--font-body);
+				overflow-x: hidden;
+				min-height: 100vh;
+			}
+			::-webkit-scrollbar {
+				width: 6px;
+				height: 6px;
+			}
+			::-webkit-scrollbar-track {
+				background: var(--bg);
+			}
+			::-webkit-scrollbar-thumb {
+				background: #444;
+				border-radius: 3px;
+			}
+
+			/* ─── Profile Screen ─────────────────────────────────────────────── */
+			#profile-screen {
+				position: fixed;
+				inset: 0;
+				z-index: 1000;
+				background: #000;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 3rem;
+				transition:
+					opacity 0.8s ease,
+					visibility 0.8s ease;
+			}
+			#profile-screen.hidden {
+				opacity: 0;
+				visibility: hidden;
+				pointer-events: none;
+			}
+			#profile-screen h1 {
+				font-family: var(--font-display);
+				font-size: clamp(2rem, 6vw, 4rem);
+				letter-spacing: 0.1em;
+			}
+			.profiles {
+				display: flex;
+				gap: 2.5rem;
+				flex-wrap: wrap;
+				justify-content: center;
+			}
+			.profile-card {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 1rem;
+				cursor: pointer;
+				transition: transform var(--transition);
+				animation: fadeIn 0.5s ease both;
+			}
+			.profile-card:nth-child(1) {
+				animation-delay: 0.1s;
+			}
+			.profile-card:nth-child(2) {
+				animation-delay: 0.2s;
+			}
+			.profile-card:nth-child(3) {
+				animation-delay: 0.3s;
+			}
+			.profile-card:hover {
+				transform: scale(1.08);
+			}
+			.profile-card:hover .profile-avatar {
+				border-color: var(--white);
+			}
+			.profile-card:hover .profile-name {
+				color: var(--white);
+			}
+			.profile-avatar {
+				width: 120px;
+				height: 120px;
+				border-radius: 8px;
+				border: 3px solid transparent;
+				overflow: hidden;
+				transition: border-color var(--transition);
+				background: var(--card-bg);
+			}
+			.profile-avatar img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				display: block;
+			}
+			.profile-name {
+				font-size: 1rem;
+				font-weight: 500;
+				color: var(--gray);
+				transition: color var(--transition);
+				letter-spacing: 0.05em;
+			}
+			.profile-card.together .profile-avatar {
+				background: linear-gradient(135deg, #e50914 0%, #7b0000 100%);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.profile-card.together .profile-avatar svg {
+				width: 60px;
+				height: 60px;
+				color: var(--white);
+			}
+
+			/* ─── App ────────────────────────────────────────────────────────── */
+			#app {
+				opacity: 0;
+				transition: opacity 0.8s ease;
+			}
+			#app.visible {
+				opacity: 1;
+			}
+
+			/* ─── Navbar ─────────────────────────────────────────────────────── */
+			nav {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				z-index: 900;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 1rem 4%;
+				background: linear-gradient(
+					to bottom,
+					rgba(0, 0, 0, 0.9) 0%,
+					transparent 100%
+				);
+				transition: background 0.3s;
+			}
+			nav.scrolled {
+				background: rgba(20, 20, 20, 0.97);
+			}
+			.nav-logo {
+				font-family: var(--font-display);
+				font-size: clamp(1.6rem, 3vw, 2.4rem);
+				color: var(--red);
+				letter-spacing: 0.05em;
+				cursor: pointer;
+			}
+			.nav-right {
+				display: flex;
+				align-items: center;
+				gap: 1.5rem;
+			}
+			.nav-profile-thumb {
+				width: 36px;
+				height: 36px;
+				border-radius: 4px;
+				overflow: hidden;
+				cursor: pointer;
+				border: 2px solid transparent;
+				transition: border-color var(--transition);
+			}
+			.nav-profile-thumb:hover {
+				border-color: var(--white);
+			}
+			.nav-profile-thumb img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			/* ─── Game Icon (nav) ───────────────────────────────────────────── */
+			.nav-game-icon {
+				width: 36px;
+				height: 36px;
+				border-radius: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				color: var(--white);
+				background: transparent;
+				border: none;
+				padding: 0;
+				transition:
+					transform var(--transition),
+					color var(--transition);
+				opacity: 0.85;
+			}
+			.nav-game-icon:hover {
+				transform: scale(1.12);
+				color: var(--red);
+				opacity: 1;
+			}
+			.nav-game-icon svg {
+				width: 23px;
+				height: 23px;
+			}
+
+			/* ─── Hero ───────────────────────────────────────────────────────── */
+			#hero {
+				position: relative;
+				height: 90vh;
+				min-height: 500px;
+				overflow: hidden;
+				display: flex;
+				align-items: flex-end;
+			}
+			.hero-bg {
+				position: absolute;
+				inset: 0;
+				background-size: cover;
+				background-position: center top;
+				animation: heroZoom 20s ease-in-out infinite alternate;
+			}
+			@keyframes heroZoom {
+				from {
+					transform: scale(1);
+				}
+				to {
+					transform: scale(1.06);
+				}
+			}
+			.hero-bg::after {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background:
+					linear-gradient(
+						to top,
+						#141414 0%,
+						rgba(20, 20, 20, 0.6) 40%,
+						rgba(20, 20, 20, 0.1) 70%
+					),
+					linear-gradient(to right, rgba(20, 20, 20, 0.9) 0%, transparent 60%);
+			}
+			.hero-content {
+				position: relative;
+				z-index: 2;
+				padding: 0 4% 5%;
+				max-width: 600px;
+			}
+			.hero-badge {
+				display: inline-block;
+				font-size: 0.75rem;
+				font-weight: 700;
+				letter-spacing: 0.15em;
+				text-transform: uppercase;
+				color: var(--red);
+				border: 1px solid var(--red);
+				padding: 4px 10px;
+				border-radius: 3px;
+				margin-bottom: 1rem;
+			}
+			.hero-title {
+				font-family: var(--font-display);
+				font-size: clamp(2.8rem, 7vw, 6rem);
+				line-height: 0.95;
+				letter-spacing: 0.03em;
+				margin-bottom: 1.2rem;
+				text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+			}
+			.hero-meta {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin-bottom: 1.2rem;
+				flex-wrap: wrap;
+			}
+			.hero-match {
+				color: #46d369;
+				font-weight: 700;
+				font-size: 1rem;
+			}
+			.hero-year {
+				font-size: 0.9rem;
+				color: #ccc;
+			}
+			.hero-rating {
+				font-size: 0.8rem;
+				border: 1px solid #aaa;
+				padding: 1px 6px;
+				color: #ccc;
+			}
+			.hero-desc {
+				font-size: clamp(0.85rem, 2vw, 1rem);
+				line-height: 1.6;
+				color: #ccc;
+				margin-bottom: 1.8rem;
+			}
+			.hero-buttons {
+				display: flex;
+				gap: 1rem;
+				flex-wrap: wrap;
+			}
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.65rem 1.8rem;
+				border: none;
+				border-radius: 4px;
+				font-family: var(--font-body);
+				font-size: 1rem;
+				font-weight: 600;
+				cursor: pointer;
+				transition: all var(--transition);
+				text-transform: uppercase;
+				letter-spacing: 0.04em;
+			}
+			.btn-play {
+				background: var(--white);
+				color: #000;
+			}
+			.btn-play:hover {
+				background: rgba(255, 255, 255, 0.85);
+			}
+			.btn-info {
+				background: rgba(109, 109, 110, 0.7);
+				color: var(--white);
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				backdrop-filter: blur(4px);
+			}
+			.btn-info:hover {
+				background: rgba(109, 109, 110, 0.9);
+			}
+			.btn svg {
+				width: 20px;
+				height: 20px;
+				flex-shrink: 0;
+			}
+
+			/* ─── Rows ───────────────────────────────────────────────────────── */
+			#rows {
+				padding: 0 0 4rem;
+			}
+			.row {
+				margin-bottom: 3rem;
+			}
+			.row-header {
+				padding: 0 4%;
+				margin-bottom: 1rem;
+				display: flex;
+				align-items: baseline;
+				gap: 1rem;
+			}
+			.row-title {
+				font-family: var(--font-display);
+				font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+				letter-spacing: 0.06em;
+			}
+			.row-subtitle {
+				font-size: 0.8rem;
+				color: #46d369;
+				font-weight: 600;
+			}
+			.row-track {
+				display: flex;
+				gap: 0.5rem;
+				padding: 0.5rem 4%;
+				overflow-x: auto;
+				overflow-y: visible;
+				scroll-snap-type: x mandatory;
+				-webkit-overflow-scrolling: touch;
+				scrollbar-width: none;
+			}
+			.row-track::-webkit-scrollbar {
+				display: none;
+			}
+
+			/* ─── Card ───────────────────────────────────────────────────────── */
+			.card {
+				flex: 0 0 calc(33.33% - 0.35rem);
+				min-width: 160px;
+				max-width: 260px;
+				scroll-snap-align: start;
+				position: relative;
+				border-radius: 6px;
+				overflow: visible;
+				cursor: pointer;
+				z-index: 1;
+				transition:
+					transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+					z-index 0s 0.35s;
+			}
+			@media (min-width: 600px) {
+				.card {
+					flex: 0 0 calc(25% - 0.4rem);
+				}
+			}
+			@media (min-width: 900px) {
+				.card {
+					flex: 0 0 calc(20% - 0.42rem);
+				}
+			}
+			@media (min-width: 1200px) {
+				.card {
+					flex: 0 0 calc(16.66% - 0.43rem);
+				}
+			}
+			.card:hover {
+				transform: scale(1.22) translateY(-8px);
+				z-index: 50;
+				transition:
+					transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+					z-index 0s;
+				box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+			}
+			.card-inner {
+				border-radius: 6px;
+				overflow: hidden;
+				background: var(--card-bg);
+			}
+			.card-img {
+				width: 100%;
+				aspect-ratio: 16/10;
+				object-fit: cover;
+				display: block;
+			}
+			.card-overlay {
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+					to top,
+					rgba(0, 0, 0, 0.9) 0%,
+					transparent 60%
+				);
+				opacity: 0;
+				transition: opacity var(--transition);
+				border-radius: 6px;
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-end;
+				padding: 0.75rem;
+			}
+			.card:hover .card-overlay {
+				opacity: 1;
+			}
+			.card-match {
+				font-size: 0.75rem;
+				font-weight: 700;
+				color: #46d369;
+				margin-bottom: 0.25rem;
+			}
+			.card-label {
+				font-size: 0.7rem;
+				color: #ddd;
+				font-weight: 500;
+				line-height: 1.3;
+			}
+			.card-footer {
+				background: var(--card-bg);
+				padding: 0.6rem 0.75rem;
+				display: none;
+				align-items: center;
+				justify-content: space-between;
+			}
+			.card:hover .card-footer {
+				display: flex;
+			}
+			.card-icons {
+				display: flex;
+				gap: 0.5rem;
+			}
+			.card-icon-btn,
+			.card-chevron {
+				width: 28px;
+				height: 28px;
+				border-radius: 50%;
+				border: 1.5px solid #aaa;
+				background: transparent;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all var(--transition);
+				color: var(--white);
+			}
+			.card-icon-btn:hover,
+			.card-chevron:hover {
+				border-color: var(--white);
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.card-icon-btn svg,
+			.card-chevron svg {
+				width: 14px;
+				height: 14px;
+			}
+
+			/* ─── Info Modal ─────────────────────────────────────────────────── */
+			#modal-backdrop {
+				position: fixed;
+				inset: 0;
+				z-index: 2000;
+				background: rgba(0, 0, 0, 0.75);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 1rem;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.3s ease,
+					visibility 0.3s ease;
+			}
+			#modal-backdrop.open {
+				opacity: 1;
+				visibility: visible;
+			}
+			#modal {
+				background: var(--modal-bg);
+				border-radius: 8px;
+				overflow: hidden;
+				width: 100%;
+				max-width: 720px;
+				max-height: 90vh;
+				overflow-y: auto;
+				transform: scale(0.9) translateY(20px);
+				transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+				position: relative;
+			}
+			#modal-backdrop.open #modal {
+				transform: scale(1) translateY(0);
+			}
+			.modal-hero {
+				position: relative;
+				height: 320px;
+				overflow: hidden;
+			}
+			.modal-hero-img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.modal-hero-grad {
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+					to top,
+					var(--modal-bg) 0%,
+					rgba(24, 24, 24, 0.3) 50%,
+					transparent 100%
+				);
+			}
+			.modal-close {
+				position: absolute;
+				top: 1rem;
+				right: 1rem;
+				width: 36px;
+				height: 36px;
+				border-radius: 50%;
+				background: rgba(0, 0, 0, 0.7);
+				border: 1.5px solid #666;
+				color: var(--white);
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: all var(--transition);
+				z-index: 10;
+			}
+			.modal-close:hover {
+				background: rgba(0, 0, 0, 0.9);
+				border-color: var(--white);
+			}
+			.modal-close svg {
+				width: 18px;
+				height: 18px;
+			}
+			.modal-body {
+				padding: 1.5rem 2rem 2rem;
+			}
+			.modal-title {
+				font-family: var(--font-display);
+				font-size: clamp(1.8rem, 4vw, 3rem);
+				letter-spacing: 0.04em;
+				margin-bottom: 0.75rem;
+			}
+			.modal-meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.75rem;
+				align-items: center;
+				margin-bottom: 1rem;
+			}
+			.modal-match {
+				color: #46d369;
+				font-weight: 700;
+			}
+			.modal-date {
+				color: #aaa;
+				font-size: 0.9rem;
+			}
+			.modal-rating {
+				font-size: 0.8rem;
+				border: 1px solid #aaa;
+				padding: 1px 6px;
+				color: #aaa;
+			}
+			.modal-tag {
+				font-size: 0.75rem;
+				background: rgba(229, 9, 20, 0.2);
+				color: var(--red);
+				border: 1px solid rgba(229, 9, 20, 0.4);
+				padding: 2px 8px;
+				border-radius: 3px;
+				font-weight: 600;
+			}
+			.modal-buttons {
+				display: flex;
+				gap: 0.75rem;
+				margin-bottom: 1.5rem;
+				flex-wrap: wrap;
+			}
+			.modal-btn-play {
+				background: var(--white);
+				color: #000;
+				padding: 0.6rem 1.5rem;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				font-family: var(--font-body);
+				font-weight: 700;
+				font-size: 0.95rem;
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				transition: all var(--transition);
+			}
+			.modal-btn-play:hover {
+				background: rgba(255, 255, 255, 0.85);
+			}
+			.modal-btn-play svg {
+				width: 18px;
+				height: 18px;
+			}
+			.modal-btn-list {
+				background: transparent;
+				color: var(--white);
+				padding: 0.6rem 1.2rem;
+				border: 2px solid var(--white);
+				border-radius: 4px;
+				cursor: pointer;
+				font-family: var(--font-body);
+				font-weight: 600;
+				font-size: 0.9rem;
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				transition: all var(--transition);
+			}
+			.modal-btn-list:hover {
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.modal-btn-list svg {
+				width: 18px;
+				height: 18px;
+			}
+			.modal-desc {
+				font-size: 0.95rem;
+				line-height: 1.7;
+				color: #ccc;
+				margin-bottom: 1.5rem;
+			}
+			.modal-details {
+				font-size: 0.85rem;
+				line-height: 2;
+			}
+			.modal-details span {
+				color: #777;
+			}
+			.modal-details strong {
+				color: #ddd;
+				font-weight: 500;
+			}
+
+			/* ══════════════════════════════════════════════════════════════
+   VIDEO PLAYER
+══════════════════════════════════════════════════════════════ */
+			#player-backdrop {
+				position: fixed;
+				inset: 0;
+				z-index: 3000;
+				background: #000;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.4s ease,
+					visibility 0.4s ease;
+			}
+			#player-backdrop.open {
+				opacity: 1;
+				visibility: visible;
+			}
+			#player-wrap {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				background: #000;
+			}
+
+			/* Stage */
+			#player-stage {
+				position: relative;
+				flex: 1;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				overflow: hidden;
+				cursor: pointer;
+				background: #000;
+				user-select: none;
+			}
+			#player-photo {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+				display: none;
+				pointer-events: none;
+			}
+			#player-photo.active {
+				display: block;
+			}
+			#player-video {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+				display: none;
+			}
+			#player-video.active {
+				display: block;
+			}
+
+			/* Placeholder */
+			#player-placeholder {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 1.5rem;
+				background: radial-gradient(ellipse at center, #1a0a0a 0%, #000 70%);
+			}
+			#player-placeholder.hidden {
+				display: none;
+			}
+			.ph-icon {
+				width: 80px;
+				height: 80px;
+				opacity: 0.25;
+			}
+			.ph-title {
+				font-family: var(--font-display);
+				font-size: clamp(1.6rem, 4vw, 2.8rem);
+				letter-spacing: 0.05em;
+				text-align: center;
+				opacity: 0.55;
+			}
+			.ph-sub {
+				font-size: 0.85rem;
+				color: #555;
+				text-align: center;
+				max-width: 360px;
+				line-height: 1.7;
+				padding: 0 1rem;
+			}
+			.ph-sub code {
+				color: #888;
+				background: rgba(255, 255, 255, 0.06);
+				padding: 1px 5px;
+				border-radius: 3px;
+				font-size: 0.8rem;
+			}
+
+			/* Big play indicator */
+			#player-big-play {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: none;
+				opacity: 0;
+				transition: opacity 0.2s;
+				z-index: 4;
+			}
+			#player-big-play.show {
+				opacity: 1;
+			}
+			.big-play-circle {
+				width: 80px;
+				height: 80px;
+				border-radius: 50%;
+				background: rgba(0, 0, 0, 0.55);
+				border: 3px solid rgba(255, 255, 255, 0.8);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transform: scale(0.8);
+				transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+			}
+			#player-big-play.show .big-play-circle {
+				transform: scale(1);
+			}
+			.big-play-circle svg {
+				width: 36px;
+				height: 36px;
+				color: var(--white);
+			}
+			#big-play-icon-offset {
+				margin-left: 4px;
+			}
+
+			/* Ripple */
+			@keyframes ripple {
+				0% {
+					transform: scale(1);
+					opacity: 0.55;
+				}
+				100% {
+					transform: scale(2.8);
+					opacity: 0;
+				}
+			}
+			.ripple-ring {
+				position: absolute;
+				width: 80px;
+				height: 80px;
+				border-radius: 50%;
+				border: 3px solid rgba(255, 255, 255, 0.45);
+				pointer-events: none;
+				animation: ripple 0.55s ease-out forwards;
+			}
+
+			/* Spinner */
+			#player-spinner {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				pointer-events: none;
+				opacity: 0;
+				transition: opacity 0.3s;
+				z-index: 5;
+			}
+			#player-spinner.show {
+				opacity: 1;
+			}
+			.spinner-ring {
+				width: 52px;
+				height: 52px;
+				border-radius: 50%;
+				border: 4px solid rgba(255, 255, 255, 0.15);
+				border-top-color: var(--red);
+				animation: spin 0.8s linear infinite;
+			}
+			@keyframes spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			/* Toast */
+			#player-toast {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background: rgba(0, 0, 0, 0.65);
+				border-radius: 10px;
+				padding: 0.5rem 1.4rem;
+				font-size: 1.6rem;
+				pointer-events: none;
+				opacity: 0;
+				z-index: 20;
+				transition: opacity 0.15s;
+				white-space: nowrap;
+			}
+			#player-toast.pop {
+				opacity: 1;
+			}
+
+			/* ─── Top Bar ────────────────────────────────────────────────────── */
+			#player-topbar {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				z-index: 10;
+				padding: 1.2rem 2rem 3.5rem;
+				background: linear-gradient(
+					to bottom,
+					rgba(0, 0, 0, 0.88) 0%,
+					transparent 100%
+				);
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				transition:
+					opacity 0.35s ease,
+					transform 0.35s ease;
+			}
+			#player-topbar.hide {
+				opacity: 0;
+				transform: translateY(-10px);
+				pointer-events: none;
+			}
+			.player-back-btn {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				background: transparent;
+				border: none;
+				color: var(--white);
+				cursor: pointer;
+				font-family: var(--font-body);
+				font-size: 0.9rem;
+				font-weight: 600;
+				letter-spacing: 0.05em;
+				text-transform: uppercase;
+				padding: 0.4rem 0.8rem;
+				border-radius: 4px;
+				transition: background var(--transition);
+				flex-shrink: 0;
+			}
+			.player-back-btn:hover {
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.player-back-btn svg {
+				width: 20px;
+				height: 20px;
+			}
+			.player-top-info {
+				flex: 1;
+				min-width: 0;
+			}
+			.player-top-show {
+				font-size: 0.7rem;
+				color: var(--red);
+				font-weight: 700;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				margin-bottom: 2px;
+			}
+			.player-top-title {
+				font-family: var(--font-display);
+				font-size: clamp(1rem, 2.5vw, 1.9rem);
+				letter-spacing: 0.04em;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.player-top-ep {
+				font-size: 0.75rem;
+				color: #aaa;
+				margin-top: 2px;
+			}
+
+			/* ─── Controls Bar ───────────────────────────────────────────────── */
+			#player-controls {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				z-index: 10;
+				padding: 4rem 2rem 1.5rem;
+				background: linear-gradient(
+					to top,
+					rgba(0, 0, 0, 0.92) 0%,
+					transparent 100%
+				);
+				transition:
+					opacity 0.35s ease,
+					transform 0.35s ease;
+			}
+			#player-controls.hide {
+				opacity: 0;
+				transform: translateY(10px);
+				pointer-events: none;
+			}
+
+			/* Seek */
+			.seek-row {
+				display: flex;
+				align-items: center;
+				gap: 0.8rem;
+				margin-bottom: 0.9rem;
+			}
+			.time-lbl {
+				font-size: 0.8rem;
+				color: #ccc;
+				font-variant-numeric: tabular-nums;
+				white-space: nowrap;
+				min-width: 36px;
+			}
+			.time-lbl.right {
+				text-align: right;
+			}
+			.seek-wrap {
+				flex: 1;
+				height: 4px;
+				background: rgba(255, 255, 255, 0.28);
+				border-radius: 2px;
+				position: relative;
+				cursor: pointer;
+				transition: height 0.15s;
+			}
+			.seek-wrap:hover {
+				height: 6px;
+			}
+			.seek-buf {
+				position: absolute;
+				top: 0;
+				left: 0;
+				height: 100%;
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 2px;
+				pointer-events: none;
+			}
+			.seek-fill {
+				height: 100%;
+				background: var(--red);
+				border-radius: 2px;
+				pointer-events: none;
+				position: relative;
+				transition: width 0.1s linear;
+			}
+			.seek-fill::after {
+				content: "";
+				position: absolute;
+				right: -7px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--white);
+				opacity: 0;
+				transition: opacity 0.15s;
+				box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+			}
+			.seek-wrap:hover .seek-fill::after {
+				opacity: 1;
+			}
+			.seek-ghost {
+				position: absolute;
+				top: 0;
+				left: 0;
+				height: 100%;
+				background: rgba(255, 255, 255, 0.13);
+				border-radius: 2px;
+				pointer-events: none;
+				transition: width 0.05s;
+			}
+
+			/* Controls row */
+			.ctrl-row {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				flex-wrap: wrap;
+			}
+			.ctrl-btn {
+				background: transparent;
+				border: none;
+				color: var(--white);
+				cursor: pointer;
+				padding: 0.4rem;
+				border-radius: 4px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition:
+					background var(--transition),
+					transform 0.1s;
+				flex-shrink: 0;
+			}
+			.ctrl-btn:hover {
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.ctrl-btn:active {
+				transform: scale(0.9);
+			}
+			.ctrl-btn svg {
+				width: 22px;
+				height: 22px;
+				display: block;
+			}
+			.ctrl-btn.lg svg {
+				width: 30px;
+				height: 30px;
+			}
+			.ctrl-btn.sm svg {
+				width: 18px;
+				height: 18px;
+			}
+
+			/* Volume */
+			.vol-cluster {
+				display: flex;
+				align-items: center;
+				gap: 0.15rem;
+			}
+			.vol-slide-wrap {
+				width: 0;
+				overflow: hidden;
+				transition: width 0.25s ease;
+				display: flex;
+				align-items: center;
+			}
+			.vol-cluster:hover .vol-slide-wrap {
+				width: 84px;
+			}
+			input[type="range"].vol-slider {
+				-webkit-appearance: none;
+				appearance: none;
+				width: 80px;
+				height: 4px;
+				border-radius: 2px;
+				outline: none;
+				cursor: pointer;
+				background: linear-gradient(
+					to right,
+					var(--white) var(--vol, 100%),
+					rgba(255, 255, 255, 0.28) var(--vol, 100%)
+				);
+				margin: 0 2px;
+			}
+			input[type="range"].vol-slider::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--white);
+				cursor: pointer;
+			}
+			input[type="range"].vol-slider::-moz-range-thumb {
+				width: 14px;
+				height: 14px;
+				border-radius: 50%;
+				background: var(--white);
+				border: none;
+				cursor: pointer;
+			}
+
+			.ctrl-spacer {
+				flex: 1;
+			}
+			.ep-badge {
+				font-size: 0.72rem;
+				background: rgba(255, 255, 255, 0.1);
+				border: 1px solid rgba(255, 255, 255, 0.18);
+				padding: 3px 9px;
+				border-radius: 4px;
+				color: #ccc;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				max-width: 180px;
+			}
+			.quality-badge {
+				font-size: 0.68rem;
+				font-weight: 700;
+				border: 1.5px solid rgba(255, 255, 255, 0.45);
+				padding: 2px 6px;
+				border-radius: 3px;
+				color: #bbb;
+				letter-spacing: 0.05em;
+				flex-shrink: 0;
+			}
+
+			/* ─── Next Up ────────────────────────────────────────────────────── */
+			#player-nextup {
+				position: absolute;
+				bottom: 110px;
+				right: 2rem;
+				z-index: 20;
+				background: rgba(18, 18, 18, 0.92);
+				border: 1px solid rgba(255, 255, 255, 0.13);
+				border-radius: 10px;
+				padding: 0.9rem 1rem 1rem;
+				width: 270px;
+				backdrop-filter: blur(12px);
+				opacity: 0;
+				transform: translateY(12px) scale(0.97);
+				transition:
+					opacity 0.4s,
+					transform 0.4s;
+				pointer-events: none;
+				box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+			}
+			#player-nextup.show {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+				pointer-events: all;
+			}
+			.nu-label {
+				font-size: 0.65rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.12em;
+				color: var(--red);
+				margin-bottom: 0.6rem;
+			}
+			.nu-card {
+				display: flex;
+				gap: 0.75rem;
+				align-items: center;
+				margin-bottom: 0.7rem;
+			}
+			.nu-thumb {
+				width: 76px;
+				height: 50px;
+				border-radius: 5px;
+				object-fit: cover;
+				flex-shrink: 0;
+			}
+			.nu-info {
+				flex: 1;
+				min-width: 0;
+			}
+			.nu-title {
+				font-size: 0.82rem;
+				font-weight: 600;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				margin-bottom: 2px;
+			}
+			.nu-meta {
+				font-size: 0.7rem;
+				color: #aaa;
+			}
+			.nu-play-btn {
+				width: 100%;
+				background: var(--white);
+				color: #000;
+				border: none;
+				border-radius: 5px;
+				padding: 0.45rem;
+				font-family: var(--font-body);
+				font-size: 0.82rem;
+				font-weight: 700;
+				cursor: pointer;
+				transition: background var(--transition);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.4rem;
+			}
+			.nu-play-btn:hover {
+				background: rgba(255, 255, 255, 0.85);
+			}
+			.nu-play-btn svg {
+				width: 14px;
+				height: 14px;
+			}
+
+			/* Countdown ring */
+			.nu-ring-wrap {
+				position: relative;
+				width: 40px;
+				height: 40px;
+				flex-shrink: 0;
+			}
+			.nu-ring-wrap svg {
+				position: absolute;
+				inset: 0;
+				transform: rotate(-90deg);
+			}
+			.ring-bg {
+				fill: none;
+				stroke: rgba(255, 255, 255, 0.15);
+				stroke-width: 3;
+			}
+			.ring-fill {
+				fill: none;
+				stroke: var(--red);
+				stroke-width: 3;
+				stroke-linecap: round;
+				stroke-dasharray: 100;
+				stroke-dashoffset: 100;
+				transition: stroke-dashoffset 0.9s linear;
+			}
+			.ring-num {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 0.9rem;
+				font-weight: 700;
+			}
+
+			/* ══════════════════════════════════════════════════════════════
+   MINI-GAME EASTER EGG
+══════════════════════════════════════════════════════════════ */
+			#game-backdrop {
+				position: fixed;
+				inset: 0;
+				z-index: 4000;
+				background: rgba(0, 0, 0, 0.88);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 1rem;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.3s ease,
+					visibility 0.3s ease;
+			}
+			#game-backdrop.open {
+				opacity: 1;
+				visibility: visible;
+			}
+			#game-modal {
+				background: #0d0d0d;
+				border: 1px solid #2a2a2a;
+				border-radius: 10px;
+				padding: 1.1rem;
+				width: 100%;
+				max-width: 860px;
+				position: relative;
+				box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8);
+				transform: scale(0.92) translateY(16px);
+				transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+			}
+			#game-backdrop.open #game-modal {
+				transform: scale(1) translateY(0);
+			}
+			.game-header {
+				display: flex;
+				align-items: flex-start;
+				justify-content: space-between;
+				margin-bottom: 0.75rem;
+				flex-wrap: wrap;
+				gap: 0.6rem;
+			}
+			.game-title {
+				font-family: var(--font-display);
+				font-size: clamp(1.25rem, 3vw, 1.8rem);
+				letter-spacing: 0.05em;
+			}
+			.game-title .fire-txt {
+				color: var(--red);
+			}
+			.game-title .water-txt {
+				color: #2fa8ff;
+			}
+			.game-controls-info {
+				font-size: 0.74rem;
+				color: #999;
+				line-height: 1.5;
+				max-width: 480px;
+				margin-top: 0.2rem;
+			}
+			.game-controls-info strong {
+				color: #ddd;
+			}
+			.game-actions {
+				display: flex;
+				gap: 0.5rem;
+				flex-shrink: 0;
+			}
+			.game-btn {
+				background: rgba(255, 255, 255, 0.08);
+				border: 1px solid rgba(255, 255, 255, 0.18);
+				color: var(--white);
+				padding: 0.4rem 0.85rem;
+				border-radius: 5px;
+				font-size: 0.78rem;
+				font-weight: 600;
+				font-family: var(--font-body);
+				cursor: pointer;
+				transition: background var(--transition);
+				display: flex;
+				align-items: center;
+				gap: 0.35rem;
+				white-space: nowrap;
+			}
+			.game-btn:hover {
+				background: rgba(255, 255, 255, 0.18);
+			}
+			.game-btn svg {
+				width: 13px;
+				height: 13px;
+			}
+			#game-canvas-wrap {
+				position: relative;
+				width: 100%;
+				border-radius: 8px;
+				overflow: hidden;
+				background: #111;
+				line-height: 0;
+			}
+			#game-canvas {
+				width: 100%;
+				height: auto;
+				aspect-ratio: 800 / 450;
+				display: block;
+			}
+			.game-score {
+				position: absolute;
+				top: 10px;
+				left: 12px;
+				font-size: 0.8rem;
+				font-weight: 700;
+				color: #ffe27a;
+				text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+				display: flex;
+				gap: 1rem;
+			}
+			.game-overlay-msg {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 0.9rem;
+				background: rgba(0, 0, 0, 0.65);
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.3s,
+					visibility 0.3s;
+				text-align: center;
+				padding: 1rem;
+			}
+			.game-overlay-msg.show {
+				opacity: 1;
+				visibility: visible;
+			}
+			.game-overlay-msg h3 {
+				font-family: var(--font-display);
+				font-size: clamp(1.4rem, 4vw, 2.2rem);
+				letter-spacing: 0.05em;
+			}
+			.game-overlay-msg p {
+				color: #ccc;
+				font-size: 0.88rem;
+				max-width: 380px;
+			}
+
+			/* ─── Footer ─────────────────────────────────────────────────────── */
+			footer {
+				text-align: center;
+				padding: 3rem 4%;
+				border-top: 1px solid #2a2a2a;
+				color: #555;
+				font-size: 0.8rem;
+			}
+			footer .footer-logo {
+				font-family: var(--font-display);
+				font-size: 1.8rem;
+				color: var(--red);
+				margin-bottom: 0.5rem;
+			}
+
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+					transform: translateY(16px);
+				}
+				to {
+					opacity: 1;
+					transform: none;
+				}
+			}
+
+			@media (max-width: 480px) {
+				.profile-avatar {
+					width: 90px;
+					height: 90px;
+				}
+				.hero-buttons .btn {
+					padding: 0.55rem 1.2rem;
+					font-size: 0.9rem;
+				}
+				.modal-body {
+					padding: 1rem 1.2rem 1.5rem;
+				}
+				.modal-hero {
+					height: 220px;
+				}
+				#player-topbar {
+					padding: 1rem 1rem 2.5rem;
+				}
+				#player-controls {
+					padding: 3rem 1rem 1rem;
+				}
+				#player-nextup {
+					width: 220px;
+					right: 1rem;
+					bottom: 90px;
+				}
+				.ep-badge {
+					display: none;
+				}
+				.game-actions {
+					width: 100%;
+				}
+				.game-btn {
+					flex: 1;
+					justify-content: center;
+				}
+			}
+		</style>
+		<style>
+			#coming-soon {
+				position: fixed;
+				inset: 0;
+				background: #0b0b0b;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 999999;
+				color: #fff;
+				text-align: center;
+				font-family: Montserrat, sans-serif;
+			}
+			#coming-soon h1 {
+				color: #e50914;
+				font-size: 4rem;
+			}
+			#app,
+			#profile-screen,
+			#modal-backdrop,
+			#player-backdrop,
+			#game-backdrop {
+				display: none !important;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="coming-soon">
+			<div>
+				<h1>🚧 Under Construction</h1>
+				<p style="font-size: 1.6rem">
+					Rana is slow and couldn't finish making this in time.
+				</p>
+				<p style="color: #999">Check back in a week 🙂</p>
+			</div>
+		</div>
+		<!-- ═══ PROFILE SCREEN ════════════════════════════════════════════ -->
+		<div id="profile-screen">
+			<h1>Who's Watching?</h1>
+			<div class="profiles" id="profiles-container"></div>
+		</div>
+
+		<!-- ═══ MAIN APP ══════════════════════════════════════════════════ -->
+		<div id="app">
+			<nav id="navbar">
+				<div class="nav-logo" id="nav-logo">[AR]Flix</div>
+				<div class="nav-right">
+					<button
+						class="nav-game-icon"
+						title="🎮 Secret Mini-Game"
+						onclick="openGame()"
+					>
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path
+								d="M6 12h4M8 10v4M15 13h.01M18 11h.01M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.052.52-.078.78-.103 1.014a51.815 51.815 0 0 0 0 6.792c.025.234.051.494.103 1.014A4 4 0 0 0 6.68 21h10.64a4 4 0 0 0 3.978-3.59 49.756 49.756 0 0 0 0-6.82A4 4 0 0 0 17.32 5Z"
+							/>
+						</svg>
+					</button>
+					<div
+						class="nav-profile-thumb"
+						title="Switch Profile"
+						onclick="switchProfile()"
+					>
+						<img id="nav-profile-img" src="" alt="Profile" />
+					</div>
+				</div>
+			</nav>
+
+			<section id="hero">
+				<div class="hero-bg" id="hero-bg"></div>
+				<div class="hero-content">
+					<div class="hero-badge">Original Series</div>
+					<h1 class="hero-title" id="hero-title"></h1>
+					<div class="hero-meta">
+						<span class="hero-match" id="hero-match"></span>
+						<span class="hero-year" id="hero-year"></span>
+						<span class="hero-rating" id="hero-rating"></span>
+					</div>
+					<p class="hero-desc" id="hero-desc"></p>
+					<div class="hero-buttons">
+						<button class="btn btn-play" id="hero-play-btn">
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path d="M8 5v14l11-7z" /></svg
+							>Play
+						</button>
+						<button class="btn btn-info" id="hero-info-btn">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<circle cx="12" cy="12" r="10" />
+								<line x1="12" y1="16" x2="12" y2="12" />
+								<line x1="12" y1="8" x2="12.01" y2="8" /></svg
+							>More Info
+						</button>
+					</div>
+				</div>
+			</section>
+
+			<div id="rows"></div>
+
+			<footer>
+				<div class="footer-logo" id="footer-logo-txt">[AR]Flix</div>
+				<p>Made with ♥ · Est. <span id="footer-year"></span></p>
+			</footer>
+		</div>
+
+		<!-- ═══ INFO MODAL ════════════════════════════════════════════════ -->
+		<div id="modal-backdrop" onclick="closeModal(event)">
+			<div id="modal">
+				<div class="modal-hero">
+					<img class="modal-hero-img" id="modal-img" src="" alt="" />
+					<div class="modal-hero-grad"></div>
+					<button class="modal-close" onclick="closeModalDirect()">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+						>
+							<line x1="18" y1="6" x2="6" y2="18" />
+							<line x1="6" y1="6" x2="18" y2="18" />
+						</svg>
+					</button>
+				</div>
+				<div class="modal-body">
+					<h2 class="modal-title" id="modal-title"></h2>
+					<div class="modal-meta">
+						<span class="modal-match" id="modal-match"></span>
+						<span class="modal-date" id="modal-date"></span>
+						<span class="modal-rating" id="modal-rating"></span>
+						<span class="modal-tag" id="modal-tag"></span>
+					</div>
+					<div class="modal-buttons">
+						<button class="modal-btn-play" id="modal-play-btn">
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path d="M8 5v14l11-7z" /></svg
+							>Play
+						</button>
+						<button class="modal-btn-list">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<line x1="12" y1="5" x2="12" y2="19" />
+								<line x1="5" y1="12" x2="19" y2="12" /></svg
+							>Add to List
+						</button>
+					</div>
+					<p class="modal-desc" id="modal-desc"></p>
+					<div class="modal-details" id="modal-details"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- ═══ VIDEO PLAYER ══════════════════════════════════════════════ -->
+		<div id="player-backdrop">
+			<div id="player-wrap">
+				<!-- Stage -->
+				<div id="player-stage" onclick="handleStageClick(event)">
+					<img id="player-photo" src="" alt="" />
+					<video id="player-video" preload="metadata" playsinline></video>
+
+					<!-- Placeholder when no video/photo -->
+					<div id="player-placeholder">
+						<svg
+							class="ph-icon"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="white"
+							stroke-width="1"
+						>
+							<path
+								d="M15.6 11.6L22 7v10l-6.4-4.5v-0.9zM4 5h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"
+							/>
+						</svg>
+						<div class="ph-title" id="ph-title"></div>
+						<div class="ph-sub">
+							Add a <code>videoUrl</code> to this card in SETTINGS to play a
+							real video — or enjoy the poster art while the memories play in
+							your head ✨
+						</div>
+					</div>
+
+					<!-- Big play/pause flash -->
+					<div id="player-big-play">
+						<div class="big-play-circle">
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path
+									id="big-play-path"
+									d="M8 5v14l11-7z"
+									style="margin-left: 3px"
+								/>
+							</svg>
+						</div>
+					</div>
+
+					<!-- Spinner -->
+					<div id="player-spinner"><div class="spinner-ring"></div></div>
+
+					<!-- Toast -->
+					<div id="player-toast"></div>
+				</div>
+
+				<!-- TOP BAR -->
+				<div id="player-topbar">
+					<button class="player-back-btn" onclick="closePlayer()">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+						>
+							<polyline points="15 18 9 12 15 6" /></svg
+						>Back
+					</button>
+					<div class="player-top-info">
+						<div class="player-top-show" id="pt-show"></div>
+						<div class="player-top-title" id="pt-title"></div>
+						<div class="player-top-ep" id="pt-ep"></div>
+					</div>
+				</div>
+
+				<!-- CONTROLS -->
+				<div id="player-controls">
+					<!-- Seek bar -->
+					<div class="seek-row">
+						<span class="time-lbl" id="time-cur">0:00</span>
+						<div class="seek-wrap" id="seek-wrap">
+							<div class="seek-buf" id="seek-buf"></div>
+							<div class="seek-fill" id="seek-fill" style="width: 0%"></div>
+							<div class="seek-ghost" id="seek-ghost" style="width: 0%"></div>
+						</div>
+						<span class="time-lbl right" id="time-tot">0:00</span>
+					</div>
+					<!-- Buttons row -->
+					<div class="ctrl-row">
+						<!-- Play/Pause -->
+						<button
+							class="ctrl-btn lg"
+							id="pp-btn"
+							title="Play / Pause  (Space)"
+							onclick="togglePlay()"
+						>
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path id="pp-path" d="M8 5v14l11-7z" />
+							</svg>
+						</button>
+						<!-- Rewind -->
+						<button
+							class="ctrl-btn"
+							title="Rewind 10s  (←)"
+							onclick="skipBy(-10)"
+						>
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path d="M12.5 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" />
+								<path d="M12.5 3V0l-4 4 4 4V5a5 5 0 0 1 5 5h2a7 7 0 0 0-7-7z" />
+								<text
+									x="8"
+									y="15"
+									font-size="5"
+									font-family="Montserrat,sans-serif"
+									font-weight="800"
+									fill="white"
+								>
+									10
+								</text>
+							</svg>
+						</button>
+						<!-- Forward -->
+						<button
+							class="ctrl-btn"
+							title="Forward 10s  (→)"
+							onclick="skipBy(10)"
+						>
+							<svg viewBox="0 0 24 24" fill="currentColor">
+								<path d="M11.5 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7V3z" />
+								<path d="M11.5 3V0l4 4-4 4V5a5 5 0 0 0-5 5h-2a7 7 0 0 1 7-7z" />
+								<text
+									x="8"
+									y="15"
+									font-size="5"
+									font-family="Montserrat,sans-serif"
+									font-weight="800"
+									fill="white"
+								>
+									10
+								</text>
+							</svg>
+						</button>
+						<!-- Volume -->
+						<div class="vol-cluster">
+							<button
+								class="ctrl-btn sm"
+								id="vol-btn"
+								title="Mute  (M)"
+								onclick="toggleMute()"
+							>
+								<svg viewBox="0 0 24 24" fill="currentColor">
+									<path
+										id="vol-path"
+										d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+									/>
+								</svg>
+							</button>
+							<div class="vol-slide-wrap">
+								<input
+									class="vol-slider"
+									id="vol-slider"
+									type="range"
+									min="0"
+									max="1"
+									step="0.01"
+									value="1"
+									oninput="setVolume(this.value)"
+								/>
+							</div>
+						</div>
+						<!-- Episode label -->
+						<span class="ep-badge" id="ep-badge"></span>
+
+						<div class="ctrl-spacer"></div>
+
+						<!-- Quality -->
+						<span class="quality-badge">HD</span>
+
+						<!-- Subtitles (decorative) -->
+						<button class="ctrl-btn sm" title="Subtitles">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<rect x="2" y="4" width="20" height="16" rx="2" />
+								<path d="M7 15h4M15 15h2M7 11h2M13 11h4" />
+							</svg>
+						</button>
+
+						<!-- Fullscreen -->
+						<button
+							class="ctrl-btn"
+							title="Fullscreen  (F)"
+							onclick="toggleFullscreen()"
+						>
+							<svg
+								id="fs-icon"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path
+									d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+								/>
+							</svg>
+						</button>
+					</div>
+				</div>
+
+				<!-- NEXT UP PANEL -->
+				<div id="player-nextup">
+					<div class="nu-label">Next Up</div>
+					<div class="nu-card">
+						<img class="nu-thumb" id="nu-thumb" src="" alt="" />
+						<div class="nu-info">
+							<div class="nu-title" id="nu-title"></div>
+							<div class="nu-meta" id="nu-meta"></div>
+						</div>
+						<div class="nu-ring-wrap">
+							<svg viewBox="0 0 36 36">
+								<circle class="ring-bg" cx="18" cy="18" r="15.9" />
+								<circle
+									class="ring-fill"
+									id="nu-ring"
+									cx="18"
+									cy="18"
+									r="15.9"
+								/>
+							</svg>
+							<div class="ring-num" id="nu-count">5</div>
+						</div>
+					</div>
+					<button class="nu-play-btn" onclick="playNextUp()">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path d="M8 5v14l11-7z" /></svg
+						>Play Next
+					</button>
+				</div>
+			</div>
+			<!-- /player-wrap -->
+		</div>
+		<!-- /player-backdrop -->
+
+		<!-- ═══ SECRET MINI-GAME ══════════════════════════════════════════ -->
+		<div id="game-backdrop" onclick="closeGameBg(event)">
+			<div id="game-modal">
+				<div class="game-header">
+					<div>
+						<div class="game-title">
+							<span class="fire-txt" id="game-fire-name">Fire</span> &
+							<span class="water-txt" id="game-water-name">Water</span>
+						</div>
+						<div class="game-controls-info">
+							<strong id="game-fire-label">Fire</strong>: Arrow Keys to move &
+							jump &nbsp;·&nbsp; <strong id="game-water-label">Water</strong>: A
+							/ D to move, W to jump &nbsp;·&nbsp; Get each character to their
+							matching door — don't let fire touch water, or water touch lava!
+						</div>
+					</div>
+					<div class="game-actions">
+						<button class="game-btn" onclick="resetGame()">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+								<path d="M3 3v5h5" />
+							</svg>
+							Restart
+						</button>
+						<button class="game-btn" onclick="closeGame()">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+							>
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+							Close
+						</button>
+					</div>
+				</div>
+				<div id="game-canvas-wrap">
+					<canvas id="game-canvas" width="800" height="450"></canvas>
+					<div class="game-score">
+						<span id="game-gem-count">💎 0/0</span>
+						<span id="game-death-count">💀 0</span>
+					</div>
+					<div class="game-overlay-msg" id="game-win-msg">
+						<h3>You made it — together! 🎉</h3>
+						<p>Just like in real life: different elements, same destination.</p>
+						<button class="game-btn" onclick="resetGame()">Play Again</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- /game-backdrop -->
+
+		<!-- ═══ SCRIPT ════════════════════════════════════════════════════ -->
+		<script>
+			/* ═══════════════════════════════════════════════════════════════════
+   ▸  SETTINGS — customize everything here!
+   ▸  videoUrl: link to a direct .mp4 URL, or leave null to use the
+     poster image as a cinematic photo viewer instead.
+═══════════════════════════════════════════════════════════════════ */
+			const SETTINGS = {
+				siteName: "[AR]Flix",
+				coupleTitle: "The Avni & Rana Show",
+				anniversaryDate: "Since June 27, 2023",
+				coupleMatch: "100% Match",
+				heroRating: "TV-MA",
+				heroDesc:
+					"Three extraordinary years of laughter, adventure, crazy moments, and the kind of love that only gets better with every rewatch.",
+				heroBg:
+					"https://www.dropbox.com/scl/fi/pk00fevhsf5bnhg3u9q34/coverImage.jpeg?rlkey=bxvwwvegt1tjattmi6905csvg&st=ocfuh7gy&raw=1",
+
+				partner1: {
+					name: "Rana",
+					avatar:
+						"https://www.dropbox.com/scl/fi/7thjsos7b0vane3xn8b84/ranaUserPic.jpeg?rlkey=xjdwf5h6fevicrd3f15h5ybxp&st=ijhgmclw&raw=1",
+				},
+				partner2: {
+					name: "Avni",
+					avatar:
+						"https://www.dropbox.com/scl/fi/tjqw3xhsow8rrdcssnr3u/avniUserPic.jpeg?rlkey=wolrtazzn994fu1c6x3jlihpc&st=kt7e8148&raw=1",
+				},
+				together: { name: "Together" },
+
+				rows: [
+					{
+						title: "Our Best Moments",
+						subtitle: "New Episodes Added",
+						cards: [
+							{
+								title: "The Best Park Date",
+								img: "https://www.dropbox.com/scl/fi/4np4l7twx0g6vac9csa94/centenPark.jpeg?rlkey=0gev29vh4egzu6ruopkoukwi8&st=9gkctkj0&raw=1",
+								videoUrl: null,
+								match: "99% Match",
+								date: "March 2026",
+								rating: "TV-PG",
+								tag: "Nature",
+								desc: "Two kids, two hours, and the nicest walk ever. Featuring beautiful weather, spontaneous pictures, and love in the air.",
+								genre: "Travel • Nature • Romance",
+								duration: "After school hours",
+							},
+							{
+								title: "Sushi!",
+								img: "https://www.dropbox.com/scl/fi/q35e5bvsn52ohq70xzro5/sushi.jpeg?rlkey=6l73qovbvej2wbw23pyd190pq&st=5ppob73l&raw=1",
+								videoUrl: null,
+								match: "96% Match",
+								date: "March 2026",
+								rating: "TV-PG",
+								tag: "Food",
+								desc: "Sushi after school, eating in bed, and knowing home is wherever they are together.",
+								genre: "Food • Chill • Romance",
+								duration: "After school Hours",
+							},
+							{
+								title: "The Field Trip",
+								img: "https://www.dropbox.com/scl/fi/9g742mlky7iz7w2hozt50/1.jpeg?rlkey=8cnizckltomxyrugor8acrxyr&st=9298qk48&raw=1",
+								videoUrl: null,
+								match: "98% Match",
+								date: "December 2024",
+								rating: "TV-PG",
+								tag: "Adventure",
+								desc: "Sneaking out of the group to explore with each other. The most memorable field trip in the history of school field trips.",
+								genre: "Adventure • Romance",
+								duration: "An unforgettable day",
+							},
+							{
+								title: "The First Park Date",
+								img: "https://www.dropbox.com/scl/fi/jxz7ehdv8b2xjm96qxphy/avni-lake-pic.JPG?rlkey=u0aeg2pncxx9s6hlm661vjb2r&st=go2tv12f&raw=1",
+								videoUrl: null,
+								match: "94% Match",
+								date: "March 2025",
+								rating: "TV-PG",
+								tag: "Sweet",
+								desc: "The first of several dates at the park, featuring a very eventful walk, a warm (and steamy) hug, and a lot of laughter.",
+								genre: "Romance • Nature",
+								duration: "March 2025",
+							},
+							{
+								title: "Rana's 18th Birthday",
+								img: "https://www.dropbox.com/scl/fi/nsupmpnh94cztvfkc8mvn/rana18Bday.jpeg?rlkey=077e7w2dhlr87j41rw11vkrcg&st=ye95zs0f&raw=1",
+								videoUrl: null,
+								match: "99% Match",
+								date: "January 2026",
+								rating: "TV-PG",
+								tag: "Special",
+								desc: "Walking around the mall, getting pizza, and (totally) watching the new Avatar movie. The perfect birthday date.",
+								genre: "Birthday Special",
+								duration: "Several hours of bliss",
+							},
+							{
+								title: "The Beach House",
+								img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
+								videoUrl: null,
+								match: "97% Match",
+								date: "Summer 2023",
+								rating: "TV-PG",
+								tag: "Vacation",
+								desc: "Sand, sun, and the most competitive sandcastle competition ever witnessed. Low stakes. High joy.",
+								genre: "Vacation • Chill",
+								duration: "5 days",
+							},
+						],
+					},
+					{
+						title: "The Cast",
+						subtitle: "Fan Favorites",
+						cards: [
+							{
+								title: "Rana",
+								img: "https://www.dropbox.com/scl/fi/7thjsos7b0vane3xn8b84/ranaUserPic.jpeg?rlkey=xjdwf5h6fevicrd3f15h5ybxp&st=ijhgmclw&raw=1",
+								videoUrl: null,
+								match: "97% Match",
+								date: "Introduced: Season 1",
+								rating: "★★★★★",
+								tag: "Main Character",
+								desc: "The adventurous heart of the series. Known for impulsive weekend plans that somehow always work out.",
+								genre: "Outdoors • Spontaneity",
+								duration: "Full series run",
+							},
+							{
+								title: "Avni",
+								img: "https://www.dropbox.com/scl/fi/tjqw3xhsow8rrdcssnr3u/avniUserPic.jpeg?rlkey=wolrtazzn994fu1c6x3jlihpc&st=kt7e8148&raw=1",
+								videoUrl: null,
+								match: "98% Match",
+								date: "Introduced: Season 1",
+								rating: "★★★★★",
+								tag: "Main Character",
+								desc: "The thoughtful anchor of the story. Keeps every reservation, remembers every important date. A fan favorite.",
+								genre: "Planning • Music",
+								duration: "Full series run",
+							},
+						],
+					},
+					{
+						title: "Upcoming Seasons",
+						subtitle: "Coming Soon",
+						cards: [
+							{
+								title: "Season 6: The Big Move",
+								img: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80",
+								videoUrl: null,
+								match: "99% Match",
+								date: "Coming Soon",
+								rating: "TV-PG",
+								tag: "Coming Soon",
+								desc: "A new chapter in a new city. Bigger space. New adventures. The same perfect team.",
+								genre: "Life • Change • Excitement",
+								duration: "TBD",
+							},
+							{
+								title: "Italy Dream Trip",
+								img: "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&q=80",
+								videoUrl: null,
+								match: "98% Match",
+								date: "On The Wishlist",
+								rating: "TV-PG",
+								tag: "Dream Episode",
+								desc: "Pasta, piazzas, and prosecco. The long-anticipated Italy episode is in the planning stages.",
+								genre: "Travel • Food • Culture",
+								duration: "2 weeks (planned)",
+							},
+							{
+								title: "The Proposal",
+								img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80",
+								videoUrl: null,
+								match: "99% Match",
+								date: "???",
+								rating: "★★★★★",
+								tag: "Season Finale",
+								desc: "The episode everyone's been waiting for. Details are classified.",
+								genre: "Romance • Life-Changing",
+								duration: "One unforgettable moment",
+							},
+							{
+								title: "Forever After",
+								img: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=800&q=80",
+								videoUrl: null,
+								match: "100% Match",
+								date: "The Future",
+								rating: "TV-PG",
+								tag: "Series Finale",
+								desc: "Not really a finale — the beginning of an infinite series.",
+								genre: "Romance • Infinity",
+								duration: "Forever",
+							},
+						],
+					},
+				],
+			};
+			/* ═══════════════════════════════════════════════════════════════ */
+
+			/* ── Globals ─────────────────────────────────────────────────── */
+			const ALL_CARDS = SETTINGS.rows.flatMap((r) => r.cards);
+			const video = document.getElementById("player-video");
+			let activeProfile = null;
+			let currentCardIdx = 0;
+			const PS = {
+				// player state
+				playing: false,
+				muted: false,
+				volume: 1,
+				mode: "placeholder", // 'video'|'photo'|'placeholder'
+				hideTimer: null,
+				nuTimer: null,
+				nuCountdown: null,
+				nuCount: 5,
+				photoDuration: 10000,
+				photoStart: null,
+				photoInterval: null,
+			};
+
+			/* ── Profile Picker ─────────────────────────────────────────── */
+			function buildProfiles() {
+				const c = document.getElementById("profiles-container");
+				[
+					{
+						key: "partner1",
+						name: SETTINGS.partner1.name,
+						img: SETTINGS.partner1.avatar,
+					},
+					{
+						key: "partner2",
+						name: SETTINGS.partner2.name,
+						img: SETTINGS.partner2.avatar,
+					},
+					{ key: "together", name: SETTINGS.together.name, img: null },
+				].forEach((p) => {
+					const el = document.createElement("div");
+					el.className =
+						"profile-card" + (p.key === "together" ? " together" : "");
+					el.onclick = () => selectProfile(p);
+					el.innerHTML =
+						p.key === "together"
+							? `<div class="profile-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><span class="profile-name">${p.name}</span>`
+							: `<div class="profile-avatar"><img src="${p.img}" alt="${p.name}" loading="lazy"/></div><span class="profile-name">${p.name}</span>`;
+					c.appendChild(el);
+				});
+			}
+			function selectProfile(p) {
+				activeProfile = p;
+				document.getElementById("nav-profile-img").src =
+					p.key === "together" ? SETTINGS.partner1.avatar : p.img;
+				document.getElementById("profile-screen").classList.add("hidden");
+				setTimeout(() => {
+					const a = document.getElementById("app");
+					a.style.display = "block";
+					requestAnimationFrame(() => a.classList.add("visible"));
+				}, 300);
+			}
+			function switchProfile() {
+				document.getElementById("app").classList.remove("visible");
+				setTimeout(() => {
+					document.getElementById("app").style.display = "none";
+					document.getElementById("profile-screen").classList.remove("hidden");
+				}, 600);
+			}
+
+			/* ── Hero ────────────────────────────────────────────────────── */
+			function buildHero() {
+				document.getElementById("hero-bg").style.backgroundImage =
+					`url('${SETTINGS.heroBg}')`;
+				document.getElementById("hero-title").textContent =
+					SETTINGS.coupleTitle;
+				document.getElementById("hero-match").textContent =
+					SETTINGS.coupleMatch;
+				document.getElementById("hero-year").textContent =
+					SETTINGS.anniversaryDate;
+				document.getElementById("hero-rating").textContent =
+					SETTINGS.heroRating;
+				document.getElementById("hero-desc").textContent = SETTINGS.heroDesc;
+				document.getElementById("footer-year").textContent =
+					SETTINGS.anniversaryDate.split(" ").pop();
+				document.getElementById("nav-logo").textContent = SETTINGS.siteName;
+				document.getElementById("footer-logo-txt").textContent =
+					SETTINGS.siteName;
+				document.getElementById("hero-play-btn").onclick = () =>
+					openPlayer(ALL_CARDS[0]);
+				document.getElementById("hero-info-btn").onclick = () =>
+					openModal(ALL_CARDS[0]);
+			}
+
+			/* ── Rows & Cards ────────────────────────────────────────────── */
+			function buildRows() {
+				const cont = document.getElementById("rows");
+				SETTINGS.rows.forEach((row) => {
+					const rEl = document.createElement("div");
+					rEl.className = "row";
+					rEl.innerHTML = `<div class="row-header"><span class="row-title">${row.title}</span><span class="row-subtitle">${row.subtitle}</span></div>`;
+					const track = document.createElement("div");
+					track.className = "row-track";
+					row.cards.forEach((cd) => track.appendChild(buildCard(cd)));
+					rEl.appendChild(track);
+					cont.appendChild(rEl);
+				});
+			}
+			function buildCard(data) {
+				const card = document.createElement("div");
+				card.className = "card";
+				card.innerHTML = `
+    <div class="card-inner">
+      <img class="card-img" src="${data.img}" alt="${data.title}" loading="lazy"/>
+      <div class="card-overlay"><div class="card-match">${data.match}</div><div class="card-label">${data.title}</div></div>
+      <div class="card-footer">
+        <div class="card-icons">
+          <button class="card-icon-btn" title="Play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="card-icon-btn" title="Add to list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <button class="card-icon-btn" title="Like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
+        </div>
+        <button class="card-chevron" title="More info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>
+      </div>
+    </div>`;
+				card.querySelector(".card-icon-btn").onclick = (e) => {
+					e.stopPropagation();
+					openPlayer(data);
+				};
+				card.querySelector(".card-chevron").onclick = (e) => {
+					e.stopPropagation();
+					openModal(data);
+				};
+				card.querySelector(".card-inner").onclick = () => openModal(data);
+				return card;
+			}
+
+			/* ── Info Modal ──────────────────────────────────────────────── */
+			function openModal(data) {
+				document.getElementById("modal-img").src = data.img;
+				document.getElementById("modal-title").textContent = data.title;
+				document.getElementById("modal-match").textContent = data.match;
+				document.getElementById("modal-date").textContent = data.date;
+				document.getElementById("modal-rating").textContent = data.rating;
+				document.getElementById("modal-tag").textContent = data.tag;
+				document.getElementById("modal-desc").textContent = data.desc;
+				document.getElementById("modal-details").innerHTML =
+					`<div><span>Genre: </span><strong>${data.genre}</strong></div><div><span>Duration: </span><strong>${data.duration}</strong></div>`;
+				document.getElementById("modal-play-btn").onclick = () => {
+					closeModalDirect();
+					openPlayer(data);
+				};
+				document.getElementById("modal-backdrop").classList.add("open");
+				document.body.style.overflow = "hidden";
+			}
+			function closeModal(e) {
+				if (e.target === document.getElementById("modal-backdrop"))
+					closeModalDirect();
+			}
+			function closeModalDirect() {
+				document.getElementById("modal-backdrop").classList.remove("open");
+				document.body.style.overflow = "";
+			}
+
+			/* ══════════════════════════════════════════════════════════════
+   PLAYER
+══════════════════════════════════════════════════════════════ */
+			function openPlayer(data) {
+				closeModalDirect();
+				currentCardIdx = ALL_CARDS.indexOf(data);
+				if (currentCardIdx < 0) currentCardIdx = 0;
+				loadCard(data);
+				document.getElementById("player-backdrop").classList.add("open");
+				document.body.style.overflow = "hidden";
+				showControls();
+				scheduleHide();
+			}
+
+			function loadCard(data) {
+				cancelNextUp();
+				// Top bar
+				document.getElementById("pt-show").textContent = SETTINGS.siteName;
+				document.getElementById("pt-title").textContent = data.title;
+				document.getElementById("pt-ep").textContent =
+					data.date + " · " + data.tag;
+				document.getElementById("ep-badge").textContent = data.title;
+				// Pre-load Next Up info
+				const nxt = ALL_CARDS[(currentCardIdx + 1) % ALL_CARDS.length];
+				document.getElementById("nu-thumb").src = nxt.img;
+				document.getElementById("nu-title").textContent = nxt.title;
+				document.getElementById("nu-meta").textContent = nxt.date;
+				// Decide mode
+				if (data.videoUrl) setMode("video", data);
+				else if (data.img) setMode("photo", data);
+				else setMode("placeholder", data);
+			}
+
+			function setMode(mode, data) {
+				PS.mode = mode;
+				const photo = document.getElementById("player-photo");
+				const vid = document.getElementById("player-video");
+				const ph = document.getElementById("player-placeholder");
+				photo.classList.remove("active");
+				vid.classList.remove("active");
+				ph.classList.remove("hidden");
+				clearInterval(PS.photoInterval);
+				PS.playing = false;
+				updatePlayIcon();
+				setSeeked(0, 0);
+
+				if (mode === "video") {
+					ph.classList.add("hidden");
+					vid.classList.add("active");
+					vid.src = data.videoUrl;
+					vid.load();
+					showSpinner();
+					vid
+						.play()
+						.then(() => {
+							PS.playing = true;
+							updatePlayIcon();
+							hideSpinner();
+						})
+						.catch(() => hideSpinner());
+				} else if (mode === "photo") {
+					ph.classList.add("hidden");
+					photo.classList.add("active");
+					photo.src = data.img;
+					PS.playing = true;
+					updatePlayIcon();
+					startPhotoProgress();
+					// Show Next Up near end
+					PS.nuTimer = setTimeout(() => showNextUp(8), PS.photoDuration - 9000);
+				} else {
+					document.getElementById("ph-title").textContent = data.title;
+				}
+			}
+
+			/* ── Photo fake progress ─────────────────────────────────────── */
+			function startPhotoProgress() {
+				clearInterval(PS.photoInterval);
+				PS.photoStart = performance.now();
+				document.getElementById("time-tot").textContent = fmt(
+					PS.photoDuration / 1000,
+				);
+				PS.photoInterval = setInterval(() => {
+					if (!PS.playing || PS.mode !== "photo") return;
+					const elapsed = performance.now() - PS.photoStart;
+					const pct = Math.min(elapsed / PS.photoDuration, 1);
+					setSeeked(pct * (PS.photoDuration / 1000), PS.photoDuration / 1000);
+					if (pct >= 1) {
+						clearInterval(PS.photoInterval);
+						showNextUp(5);
+					}
+				}, 80);
+			}
+
+			/* ── Video events ────────────────────────────────────────────── */
+			video.addEventListener("timeupdate", () => {
+				if (!video.duration) return;
+				setSeeked(video.currentTime, video.duration);
+				const rem = video.duration - video.currentTime;
+				if (
+					rem < 30 &&
+					rem > 4 &&
+					!document.getElementById("player-nextup").classList.contains("show")
+				)
+					showNextUp(Math.min(Math.floor(rem), 8));
+			});
+			video.addEventListener("ended", () => {
+				PS.playing = false;
+				updatePlayIcon();
+				showNextUp(5);
+			});
+			video.addEventListener("waiting", () => showSpinner());
+			video.addEventListener("playing", () => {
+				hideSpinner();
+				PS.playing = true;
+				updatePlayIcon();
+			});
+			video.addEventListener("pause", () => {
+				PS.playing = false;
+				updatePlayIcon();
+			});
+			video.addEventListener("loadedmetadata", () => {
+				document.getElementById("time-tot").textContent = fmt(video.duration);
+			});
+			video.addEventListener("progress", () => {
+				if (!video.duration || !video.buffered.length) return;
+				document.getElementById("seek-buf").style.width =
+					(video.buffered.end(video.buffered.length - 1) / video.duration) *
+						100 +
+					"%";
+			});
+
+			/* ── Playback controls ───────────────────────────────────────── */
+			function togglePlay() {
+				if (PS.mode === "video") {
+					video.paused ? video.play() : video.pause();
+				} else if (PS.mode === "photo") {
+					PS.playing = !PS.playing;
+					if (PS.playing) {
+						PS.photoStart = performance.now() - (PS.currentTime || 0) * 1000;
+						startPhotoProgress();
+					} else clearInterval(PS.photoInterval);
+					updatePlayIcon();
+					showToast(PS.playing ? "▶" : "⏸");
+				}
+				showControls();
+				scheduleHide();
+			}
+
+			function updatePlayIcon() {
+				const playing = PS.playing;
+				const pauseSVG =
+					'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+				const playSVG = '<path d="M8 5v14l11-7z"/>';
+				document.getElementById("pp-path").outerHTML = playing
+					? `<g id="pp-path">${pauseSVG}</g>`
+					: `<path id="pp-path" d="M8 5v14l11-7z"/>`;
+				document.getElementById("big-play-path").outerHTML = playing
+					? `<g id="big-play-path">${pauseSVG}</g>`
+					: `<path id="big-play-path" d="M8 5v14l11-7z"/>`;
+			}
+
+			function skipBy(s) {
+				if (PS.mode !== "video") return;
+				video.currentTime = Math.max(
+					0,
+					Math.min(video.duration, video.currentTime + s),
+				);
+				showToast(s > 0 ? `+${s}s` : `${s}s`);
+				showControls();
+				scheduleHide();
+			}
+
+			function toggleMute() {
+				PS.muted = !PS.muted;
+				if (PS.mode === "video") video.muted = PS.muted;
+				updateVolIcon();
+				showToast(PS.muted ? "🔇" : "🔊");
+			}
+			function setVolume(v) {
+				PS.volume = parseFloat(v);
+				if (PS.mode === "video") video.volume = PS.volume;
+				PS.muted = PS.volume === 0;
+				document
+					.getElementById("vol-slider")
+					.style.setProperty("--vol", PS.volume * 100 + "%");
+				updateVolIcon();
+			}
+			function updateVolIcon() {
+				document
+					.getElementById("vol-path")
+					.setAttribute(
+						"d",
+						PS.muted || PS.volume === 0
+							? "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
+							: "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z",
+					);
+			}
+
+			/* ── Seek bar ────────────────────────────────────────────────── */
+			function setSeeked(cur, tot) {
+				PS.currentTime = cur;
+				PS.duration = tot;
+				const pct = tot ? (cur / tot) * 100 : 0;
+				document.getElementById("seek-fill").style.width = pct + "%";
+				document.getElementById("time-cur").textContent = fmt(cur);
+				if (tot) document.getElementById("time-tot").textContent = fmt(tot);
+			}
+			function fmt(s) {
+				s = Math.floor(s || 0);
+				return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+			}
+
+			const seekWrapEl = document.getElementById("seek-wrap");
+			seekWrapEl.addEventListener("mousemove", (e) => {
+				const r = seekWrapEl.getBoundingClientRect();
+				document.getElementById("seek-ghost").style.width =
+					Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * 100 + "%";
+			});
+			seekWrapEl.addEventListener("mouseleave", () => {
+				document.getElementById("seek-ghost").style.width = "0%";
+			});
+			seekWrapEl.addEventListener("click", (e) => {
+				const r = seekWrapEl.getBoundingClientRect();
+				const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+				if (PS.mode === "video" && video.duration)
+					video.currentTime = pct * video.duration;
+				else if (PS.mode === "photo") {
+					PS.photoStart = performance.now() - pct * PS.photoDuration;
+					setSeeked(pct * (PS.photoDuration / 1000), PS.photoDuration / 1000);
+				}
+				showControls();
+				scheduleHide();
+			});
+			// Touch seek
+			let isSeeking = false;
+			seekWrapEl.addEventListener(
+				"touchstart",
+				(e) => {
+					isSeeking = true;
+					doTouchSeek(e);
+				},
+				{ passive: true },
+			);
+			seekWrapEl.addEventListener(
+				"touchmove",
+				(e) => {
+					if (isSeeking) doTouchSeek(e);
+				},
+				{ passive: true },
+			);
+			seekWrapEl.addEventListener("touchend", () => (isSeeking = false));
+			function doTouchSeek(e) {
+				const r = seekWrapEl.getBoundingClientRect(),
+					t = e.touches[0];
+				const pct = Math.max(0, Math.min(1, (t.clientX - r.left) / r.width));
+				if (PS.mode === "video" && video.duration)
+					video.currentTime = pct * video.duration;
+			}
+
+			/* ── Controls auto-hide ──────────────────────────────────────── */
+			function showControls() {
+				document.getElementById("player-topbar").classList.remove("hide");
+				document.getElementById("player-controls").classList.remove("hide");
+			}
+			function hideControls() {
+				if (!PS.playing) return;
+				document.getElementById("player-topbar").classList.add("hide");
+				document.getElementById("player-controls").classList.add("hide");
+			}
+			function scheduleHide() {
+				clearTimeout(PS.hideTimer);
+				PS.hideTimer = setTimeout(hideControls, 3500);
+			}
+			document
+				.getElementById("player-wrap")
+				.addEventListener("mousemove", () => {
+					showControls();
+					scheduleHide();
+				});
+			["player-controls", "player-topbar", "player-nextup"].forEach((id) => {
+				document
+					.getElementById(id)
+					.addEventListener("mouseenter", () => clearTimeout(PS.hideTimer));
+				document
+					.getElementById(id)
+					.addEventListener("mouseleave", scheduleHide);
+			});
+
+			/* ── Stage click ─────────────────────────────────────────────── */
+			let clickTimer = null;
+			function handleStageClick(e) {
+				if (
+					e.target.closest("#player-controls") ||
+					e.target.closest("#player-topbar") ||
+					e.target.closest("#player-nextup")
+				)
+					return;
+				const wasVisible = !document
+					.getElementById("player-topbar")
+					.classList.contains("hide");
+				if (!wasVisible) {
+					showControls();
+					scheduleHide();
+					return;
+				}
+				clearTimeout(clickTimer);
+				clickTimer = setTimeout(() => {
+					togglePlay();
+					flashBigPlay();
+					spawnRipple(e);
+				}, 180);
+			}
+			function flashBigPlay() {
+				const el = document.getElementById("player-big-play");
+				el.classList.add("show");
+				setTimeout(() => el.classList.remove("show"), 700);
+			}
+			function spawnRipple(e) {
+				const stage = document.getElementById("player-stage");
+				const r = stage.getBoundingClientRect();
+				const ring = document.createElement("div");
+				ring.className = "ripple-ring";
+				ring.style.left = e.clientX - r.left - 40 + "px";
+				ring.style.top = e.clientY - r.top - 40 + "px";
+				stage.appendChild(ring);
+				setTimeout(() => ring.remove(), 700);
+			}
+
+			/* ── Toast ───────────────────────────────────────────────────── */
+			let toastTmr = null;
+			function showToast(msg) {
+				const t = document.getElementById("player-toast");
+				t.textContent = msg;
+				t.classList.add("pop");
+				clearTimeout(toastTmr);
+				toastTmr = setTimeout(() => t.classList.remove("pop"), 900);
+			}
+
+			/* ── Spinner ─────────────────────────────────────────────────── */
+			function showSpinner() {
+				document.getElementById("player-spinner").classList.add("show");
+			}
+			function hideSpinner() {
+				document.getElementById("player-spinner").classList.remove("show");
+			}
+
+			/* ── Fullscreen ──────────────────────────────────────────────── */
+			function toggleFullscreen() {
+				const el = document.getElementById("player-backdrop");
+				document.fullscreenElement
+					? document.exitFullscreen()
+					: el.requestFullscreen && el.requestFullscreen();
+			}
+			document.addEventListener("fullscreenchange", () => {
+				const fs = !!document.fullscreenElement;
+				document.getElementById("fs-icon").innerHTML = fs
+					? '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" fill="currentColor" stroke="none"/>'
+					: '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+			});
+
+			/* ── Close player ────────────────────────────────────────────── */
+			function closePlayer() {
+				if (document.fullscreenElement) document.exitFullscreen();
+				video.pause();
+				video.src = "";
+				clearInterval(PS.photoInterval);
+				cancelNextUp();
+				clearTimeout(PS.hideTimer);
+				document.getElementById("player-backdrop").classList.remove("open");
+				document.body.style.overflow = "";
+				PS.playing = false;
+				updatePlayIcon();
+			}
+
+			/* ── Next Up ─────────────────────────────────────────────────── */
+			function showNextUp(secs) {
+				const el = document.getElementById("player-nextup");
+				el.classList.add("show");
+				PS.nuCount = secs;
+				const ring = document.getElementById("nu-ring"),
+					num = document.getElementById("nu-count");
+				const C = 2 * Math.PI * 15.9;
+				function tick() {
+					num.textContent = PS.nuCount;
+					ring.style.strokeDashoffset = C * (1 - PS.nuCount / secs);
+					if (PS.nuCount <= 0) {
+						playNextUp();
+						return;
+					}
+					PS.nuCount--;
+					PS.nuCountdown = setTimeout(tick, 1000);
+				}
+				tick();
+			}
+			function cancelNextUp() {
+				clearTimeout(PS.nuTimer);
+				clearTimeout(PS.nuCountdown);
+				document.getElementById("player-nextup").classList.remove("show");
+				document.getElementById("nu-ring").style.strokeDashoffset = 100;
+			}
+			function playNextUp() {
+				cancelNextUp();
+				currentCardIdx = (currentCardIdx + 1) % ALL_CARDS.length;
+				loadCard(ALL_CARDS[currentCardIdx]);
+			}
+
+			/* ── Keyboard shortcuts (video player) ────────────────────────── */
+			document.addEventListener("keydown", (e) => {
+				const playerOpen = document
+					.getElementById("player-backdrop")
+					.classList.contains("open");
+				if (!playerOpen) {
+					if (e.key === "Escape") closeModalDirect();
+					return;
+				}
+				switch (e.key) {
+					case " ":
+					case "k":
+						e.preventDefault();
+						togglePlay();
+						flashBigPlay();
+						break;
+					case "ArrowLeft":
+						e.preventDefault();
+						skipBy(-10);
+						break;
+					case "ArrowRight":
+						e.preventDefault();
+						skipBy(10);
+						break;
+					case "ArrowUp":
+						e.preventDefault();
+						setVolume(Math.min(1, (PS.volume || 1) + 0.1));
+						showToast("🔊");
+						break;
+					case "ArrowDown":
+						e.preventDefault();
+						setVolume(Math.max(0, (PS.volume || 1) - 0.1));
+						showToast("🔉");
+						break;
+					case "m":
+					case "M":
+						toggleMute();
+						break;
+					case "f":
+					case "F":
+						toggleFullscreen();
+						break;
+					case "n":
+					case "N":
+						playNextUp();
+						break;
+					case "Escape":
+						closePlayer();
+						break;
+				}
+				showControls();
+				scheduleHide();
+			});
+
+			/* ── Navbar scroll ───────────────────────────────────────────── */
+			window.addEventListener("scroll", () => {
+				document
+					.getElementById("navbar")
+					.classList.toggle("scrolled", window.scrollY > 80);
+			});
+
+			/* ══════════════════════════════════════════════════════════════
+   SECRET MINI-GAME — "Fire & Water"
+   A tiny co-op platformer easter egg: one character is made of fire
+   and dies if it touches water, the other is made of water and dies
+   if it touches lava. Get them both to their matching doors!
+   Fire  → Arrow Keys (move + jump)
+   Water → A / D (move), W (jump)
+══════════════════════════════════════════════════════════════ */
+			const gameCanvas = document.getElementById("game-canvas");
+			const gctx = gameCanvas.getContext("2d");
+
+			const G_W = 800,
+				G_H = 450;
+			const GRAVITY = 0.7,
+				JUMP_V = -11.5,
+				MOVE_SPEED = 3.4,
+				MAX_FALL = 14;
+
+			const G_PLATFORMS = [
+				{ x: 0, y: 420, w: 800, h: 30 }, // ground
+				{ x: 200, y: 330, w: 110, h: 16 }, // float over lava (for water)
+				{ x: 480, y: 330, w: 110, h: 16 }, // float over water (for fire)
+			];
+			const G_HAZARDS = [
+				{ x: 200, y: 404, w: 120, h: 16, type: "lava" },
+				{ x: 480, y: 404, w: 120, h: 16, type: "water" },
+			];
+			const G_GEM_DEFS = [
+				{ x: 45, y: 392 },
+				{ x: 150, y: 392 },
+				{ x: 232, y: 305 },
+				{ x: 392, y: 392 },
+				{ x: 512, y: 305 },
+				{ x: 652, y: 392 },
+				{ x: 735, y: 392 },
+			];
+			const G_FIRE_DOOR = { x: 720, y: 365, w: 34, h: 55 };
+			const G_WATER_DOOR = { x: 656, y: 365, w: 34, h: 55 };
+			const FIRE_START = { x: 20, y: 376, w: 30, h: 44 };
+			const WATER_START = { x: 70, y: 376, w: 30, h: 44 };
+
+			const fireC = { ...FIRE_START, vx: 0, vy: 0, onGround: false };
+			const waterC = { ...WATER_START, vx: 0, vy: 0, onGround: false };
+			let G_GEMS = [];
+			let gKeys = { fireL: false, fireR: false, waterL: false, waterR: false };
+			let gJumpQ = { fire: false, water: false };
+			let gameOpen = false,
+				gameFrozen = false,
+				gameRAF = null,
+				gDeaths = 0,
+				gGemsCollected = 0;
+
+			function gOverlap(a, b) {
+				return (
+					a.x < b.x + b.w &&
+					a.x + a.w > b.x &&
+					a.y < b.y + b.h &&
+					a.y + a.h > b.y
+				);
+			}
+
+			function gUpdateChar(c, left, right, jumpKey) {
+				c.vx = 0;
+				if (left) c.vx = -MOVE_SPEED;
+				if (right) c.vx = MOVE_SPEED;
+				c.x = Math.max(0, Math.min(G_W - c.w, c.x + c.vx));
+
+				c.vy = Math.min(MAX_FALL, c.vy + GRAVITY);
+				const prevBottom = c.y + c.h;
+				c.y += c.vy;
+				c.onGround = false;
+				G_PLATFORMS.forEach((p) => {
+					const willBottom = c.y + c.h;
+					const horiz = c.x + c.w > p.x && c.x < p.x + p.w;
+					if (
+						horiz &&
+						c.vy >= 0 &&
+						prevBottom <= p.y + 2 &&
+						willBottom >= p.y
+					) {
+						c.y = p.y - c.h;
+						c.vy = 0;
+						c.onGround = true;
+					}
+				});
+				if (c.y + c.h > G_H) {
+					c.y = G_H - c.h;
+					c.vy = 0;
+					c.onGround = true;
+				}
+				if (gJumpQ[jumpKey] && c.onGround) {
+					c.vy = JUMP_V;
+					c.onGround = false;
+				}
+				gJumpQ[jumpKey] = false;
+			}
+
+			function gRespawn(c, start) {
+				c.x = start.x;
+				c.y = start.y;
+				c.vx = 0;
+				c.vy = 0;
+				gDeaths++;
+				updateGameHUD();
+			}
+
+			function gStep() {
+				if (!gameOpen) return;
+				if (!gameFrozen) {
+					gUpdateChar(fireC, gKeys.fireL, gKeys.fireR, "fire");
+					gUpdateChar(waterC, gKeys.waterL, gKeys.waterR, "water");
+
+					G_HAZARDS.forEach((h) => {
+						if (h.type === "water" && gOverlap(fireC, h))
+							gRespawn(fireC, FIRE_START);
+						if (h.type === "lava" && gOverlap(waterC, h))
+							gRespawn(waterC, WATER_START);
+					});
+
+					G_GEMS.forEach((g) => {
+						if (!g.collected) {
+							const gr = { x: g.x - 8, y: g.y - 8, w: 16, h: 16 };
+							if (gOverlap(fireC, gr) || gOverlap(waterC, gr)) {
+								g.collected = true;
+								gGemsCollected++;
+								updateGameHUD();
+							}
+						}
+					});
+
+					if (
+						!gameFrozen &&
+						gOverlap(fireC, G_FIRE_DOOR) &&
+						gOverlap(waterC, G_WATER_DOOR)
+					) {
+						gameFrozen = true;
+						document.getElementById("game-win-msg").classList.add("show");
+					}
+				}
+				gRender();
+				gameRAF = requestAnimationFrame(gStep);
+			}
+
+			function gRender() {
+				gctx.clearRect(0, 0, G_W, G_H);
+				const sky = gctx.createLinearGradient(0, 0, 0, G_H);
+				sky.addColorStop(0, "#1a1a2e");
+				sky.addColorStop(1, "#0d0d12");
+				gctx.fillStyle = sky;
+				gctx.fillRect(0, 0, G_W, G_H);
+
+				// ground & platforms
+				gctx.fillStyle = "#3a2c22";
+				G_PLATFORMS.forEach((p) => gctx.fillRect(p.x, p.y, p.w, p.h));
+				gctx.fillStyle = "#5a4634";
+				G_PLATFORMS.forEach((p) => gctx.fillRect(p.x, p.y, p.w, 4));
+
+				// hazards
+				G_HAZARDS.forEach((h) => {
+					const grad = gctx.createLinearGradient(h.x, h.y, h.x, h.y + h.h);
+					if (h.type === "lava") {
+						grad.addColorStop(0, "#ff8a3d");
+						grad.addColorStop(1, "#b3260a");
+					} else {
+						grad.addColorStop(0, "#7fd6ff");
+						grad.addColorStop(1, "#0d6fb0");
+					}
+					gctx.fillStyle = grad;
+					gctx.fillRect(h.x, h.y, h.w, h.h);
+					gctx.strokeStyle = "rgba(255,255,255,0.25)";
+					gctx.lineWidth = 1;
+					for (let i = 0; i < h.w; i += 14) {
+						gctx.beginPath();
+						gctx.moveTo(h.x + i, h.y + 3);
+						gctx.lineTo(h.x + i + 7, h.y + h.h - 3);
+						gctx.stroke();
+					}
+				});
+
+				// gems
+				G_GEMS.forEach((g) => {
+					if (g.collected) return;
+					gctx.save();
+					gctx.translate(g.x, g.y);
+					gctx.rotate(Math.PI / 4);
+					gctx.fillStyle = "#ffe27a";
+					gctx.fillRect(-6, -6, 12, 12);
+					gctx.restore();
+				});
+
+				// doors
+				gDrawDoor(G_FIRE_DOOR, "#e50914", "🔥");
+				gDrawDoor(G_WATER_DOOR, "#2fa8ff", "💧");
+
+				// characters
+				gDrawChar(fireC, "#e50914", "#ff9a52");
+				gDrawChar(waterC, "#2fa8ff", "#a9e6ff");
+			}
+
+			function gDrawDoor(d, color, emoji) {
+				gctx.fillStyle = color;
+				gctx.globalAlpha = 0.85;
+				gctx.fillRect(d.x, d.y, d.w, d.h);
+				gctx.globalAlpha = 1;
+				gctx.strokeStyle = "rgba(255,255,255,0.5)";
+				gctx.strokeRect(d.x, d.y, d.w, d.h);
+				gctx.font = "20px sans-serif";
+				gctx.textAlign = "center";
+				gctx.fillText(emoji, d.x + d.w / 2, d.y + 26);
+			}
+
+			function gDrawChar(c, mainColor, lightColor) {
+				gctx.fillStyle = mainColor;
+				gctx.beginPath();
+				gctx.roundRect
+					? gctx.roundRect(c.x, c.y, c.w, c.h, 6)
+					: gctx.rect(c.x, c.y, c.w, c.h);
+				gctx.fill();
+				gctx.fillStyle = lightColor;
+				gctx.beginPath();
+				gctx.arc(c.x + c.w * 0.32, c.y + c.h * 0.35, 3, 0, Math.PI * 2);
+				gctx.arc(c.x + c.w * 0.68, c.y + c.h * 0.35, 3, 0, Math.PI * 2);
+				gctx.fill();
+			}
+
+			function updateGameHUD() {
+				document.getElementById("game-gem-count").textContent =
+					"💎 " + gGemsCollected + "/" + G_GEM_DEFS.length;
+				document.getElementById("game-death-count").textContent =
+					"💀 " + gDeaths;
+			}
+
+			function openGame() {
+				document.getElementById("game-fire-name").textContent =
+					SETTINGS.partner1.name;
+				document.getElementById("game-water-name").textContent =
+					SETTINGS.partner2.name;
+				document.getElementById("game-fire-label").textContent =
+					SETTINGS.partner1.name;
+				document.getElementById("game-water-label").textContent =
+					SETTINGS.partner2.name;
+				document.getElementById("game-backdrop").classList.add("open");
+				document.body.style.overflow = "hidden";
+				gameOpen = true;
+				resetGame();
+				cancelAnimationFrame(gameRAF);
+				gameRAF = requestAnimationFrame(gStep);
+			}
+			function closeGame() {
+				gameOpen = false;
+				cancelAnimationFrame(gameRAF);
+				document.getElementById("game-backdrop").classList.remove("open");
+				document.body.style.overflow = "";
+			}
+			function closeGameBg(e) {
+				if (e.target === document.getElementById("game-backdrop")) closeGame();
+			}
+			function resetGame() {
+				Object.assign(fireC, FIRE_START, { vx: 0, vy: 0, onGround: false });
+				Object.assign(waterC, WATER_START, { vx: 0, vy: 0, onGround: false });
+				G_GEMS = G_GEM_DEFS.map((g) => ({ ...g, collected: false }));
+				gDeaths = 0;
+				gGemsCollected = 0;
+				gameFrozen = false;
+				document.getElementById("game-win-msg").classList.remove("show");
+				updateGameHUD();
+				gRender();
+			}
+
+			document.addEventListener("keydown", (e) => {
+				if (
+					!document.getElementById("game-backdrop").classList.contains("open")
+				)
+					return;
+				switch (e.code) {
+					case "ArrowLeft":
+						gKeys.fireL = true;
+						e.preventDefault();
+						break;
+					case "ArrowRight":
+						gKeys.fireR = true;
+						e.preventDefault();
+						break;
+					case "ArrowUp":
+						gJumpQ.fire = true;
+						e.preventDefault();
+						break;
+					case "KeyA":
+						gKeys.waterL = true;
+						break;
+					case "KeyD":
+						gKeys.waterR = true;
+						break;
+					case "KeyW":
+						gJumpQ.water = true;
+						break;
+					case "Escape":
+						closeGame();
+						break;
+				}
+			});
+			document.addEventListener("keyup", (e) => {
+				if (
+					!document.getElementById("game-backdrop").classList.contains("open")
+				)
+					return;
+				switch (e.code) {
+					case "ArrowLeft":
+						gKeys.fireL = false;
+						break;
+					case "ArrowRight":
+						gKeys.fireR = false;
+						break;
+					case "KeyA":
+						gKeys.waterL = false;
+						break;
+					case "KeyD":
+						gKeys.waterR = false;
+						break;
+				}
+			});
+
+			/* ── Init ────────────────────────────────────────────────────── */
+			document.addEventListener("DOMContentLoaded", () => {
+				buildProfiles();
+				buildHero();
+				buildRows();
+				document.getElementById("app").style.display = "none";
+				document
+					.getElementById("vol-slider")
+					.style.setProperty("--vol", "100%");
+				resetGame();
+			});
+		</script>
+	</body>
+</html>
