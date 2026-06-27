@@ -1,0 +1,2653 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Our Story in Hindi Songs</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
+		<style>
+			/* ════════════════════════════════════════════════════════════════
+   HOW TO USE THIS PAGE
+   ────────────────────────────────────────────────────────────────
+   1) Get a free YouTube Data API key (one-time, ~2 minutes):
+        console.cloud.google.com → create/select a project →
+        "APIs & Services" → "Enable APIs" → enable
+        "YouTube Data API v3" → "Credentials" → "Create API key"
+      Paste it into SETTINGS.youtubeApiKey below.
+   2) Each track has a `query` (song + movie name). The page
+      searches YouTube automatically, finds the right video +
+      thumbnail, and caches the result in your browser so it only
+      looks each one up once.
+   3) Don't want to set up a key? You can skip it — instead give
+      a track an explicit `id` field with a direct YouTube link or
+      video ID, and it'll play that without needing any lookup.
+   4) The real audio always plays through YouTube's own official
+      IFrame Player API — the video is just hidden off-screen so
+      it behaves like an audio-only player. Background/hidden video
+      playback can be throttled on some mobile browsers (notably
+      iOS Safari) — that's a platform limitation.
+══════════════════════════════════════════════════════════════════ */
+
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			:root {
+				--bg: #0c0c0c;
+				--bg-elevated: #181818;
+				--bg-highlight: #282828;
+				--sidebar: #000000;
+				--text: #ffffff;
+				--text-sub: #a7a7a7;
+				--accent: #1db954;
+				--accent-hover: #2fe06a;
+				--font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+				--radius: 8px;
+				--transition: 0.2s ease;
+				--player-h: 86px;
+			}
+			html {
+				scroll-behavior: smooth;
+			}
+			body {
+				background: var(--bg);
+				color: var(--text);
+				font-family: var(--font);
+				min-height: 100vh;
+				overflow-x: hidden;
+			}
+			::-webkit-scrollbar {
+				width: 10px;
+			}
+			::-webkit-scrollbar-track {
+				background: transparent;
+			}
+			::-webkit-scrollbar-thumb {
+				background: #3a3a3a;
+				border-radius: 6px;
+			}
+			::-webkit-scrollbar-thumb:hover {
+				background: #555;
+			}
+			a {
+				color: inherit;
+				text-decoration: none;
+			}
+			button {
+				font-family: var(--font);
+				border: none;
+				cursor: pointer;
+				background: none;
+				color: inherit;
+			}
+			input[type="range"] {
+				-webkit-appearance: none;
+				appearance: none;
+				background: transparent;
+			}
+
+			/* ─── Hidden YouTube player ──────────────────────────────────────── */
+			#yt-player-host {
+				position: fixed;
+				left: -9999px;
+				top: -9999px;
+				width: 2px;
+				height: 2px;
+				opacity: 0;
+				pointer-events: none;
+			}
+
+			/* ─── API key banner ─────────────────────────────────────────────── */
+			#key-banner {
+				background: #3a2e0f;
+				color: #ffd98a;
+				font-size: 0.8rem;
+				padding: 0.6rem 1.5rem;
+				text-align: center;
+				border-bottom: 1px solid #5a4720;
+				display: none;
+			}
+			#key-banner.show {
+				display: block;
+			}
+			#key-banner code {
+				background: rgba(0, 0, 0, 0.3);
+				padding: 1px 6px;
+				border-radius: 4px;
+			}
+
+			/* ─── Layout ─────────────────────────────────────────────────────── */
+			.layout {
+				display: flex;
+				min-height: 100vh;
+				padding-bottom: var(--player-h);
+			}
+
+			/* ─── Sidebar ────────────────────────────────────────────────────── */
+			.sidebar {
+				width: 240px;
+				flex-shrink: 0;
+				background: var(--sidebar);
+				padding: 1.5rem 1rem;
+				display: flex;
+				flex-direction: column;
+				gap: 1.75rem;
+				position: sticky;
+				top: 0;
+				height: 100vh;
+				overflow-y: auto;
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				padding: 0 0.5rem;
+			}
+			.brand-mark {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--accent);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-shrink: 0;
+			}
+			.brand-mark svg {
+				width: 16px;
+				height: 16px;
+				color: #000;
+			}
+			.brand-name {
+				font-size: 1.1rem;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+				line-height: 1.2;
+			}
+			.nav-list {
+				display: flex;
+				flex-direction: column;
+				gap: 0.25rem;
+			}
+			.nav-item {
+				display: flex;
+				align-items: center;
+				gap: 0.9rem;
+				padding: 0.55rem 0.6rem;
+				border-radius: 6px;
+				color: var(--text-sub);
+				font-weight: 700;
+				font-size: 0.92rem;
+				transition: color var(--transition);
+				width: 100%;
+				text-align: left;
+			}
+			.nav-item:hover,
+			.nav-item.active {
+				color: var(--text);
+			}
+			.nav-item svg {
+				width: 22px;
+				height: 22px;
+				flex-shrink: 0;
+			}
+			.sidebar-divider {
+				height: 1px;
+				background: #2a2a2a;
+				margin: 0 0.5rem;
+			}
+			.sidebar-section-title {
+				font-size: 0.72rem;
+				font-weight: 700;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: #6a6a6a;
+				padding: 0 0.6rem;
+				margin-bottom: 0.25rem;
+			}
+			.sidebar-link {
+				display: block;
+				padding: 0.45rem 0.6rem;
+				border-radius: 6px;
+				color: var(--text-sub);
+				font-size: 0.88rem;
+				font-weight: 500;
+				transition:
+					background var(--transition),
+					color var(--transition);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.sidebar-link:hover {
+				color: var(--text);
+				background: var(--bg-elevated);
+			}
+			.sidebar-footer {
+				margin-top: auto;
+				font-size: 0.7rem;
+				color: #555;
+				padding: 0 0.6rem;
+				line-height: 1.6;
+			}
+
+			/* ─── Main ───────────────────────────────────────────────────────── */
+			.main {
+				flex: 1;
+				min-width: 0;
+				background: linear-gradient(
+					180deg,
+					#3d2a3f 0%,
+					#121212 320px,
+					#121212 100%
+				);
+			}
+			.topbar {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 1rem 2rem;
+				position: sticky;
+				top: 0;
+				z-index: 50;
+				background: rgba(12, 12, 12, 0);
+				transition: background var(--transition);
+				backdrop-filter: blur(0px);
+			}
+			.topbar.scrolled {
+				background: rgba(12, 12, 12, 0.85);
+				backdrop-filter: blur(10px);
+			}
+			.topbar-nav-arrows {
+				display: flex;
+				gap: 0.5rem;
+			}
+			.nav-arrow {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: rgba(0, 0, 0, 0.6);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--text-sub);
+			}
+			.nav-arrow svg {
+				width: 18px;
+				height: 18px;
+			}
+			.profile-pill {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--bg-highlight);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-weight: 700;
+				font-size: 0.85rem;
+			}
+
+			/* ─── Hero ───────────────────────────────────────────────────────── */
+			.hero {
+				display: flex;
+				align-items: flex-end;
+				gap: 1.5rem;
+				padding: 1.5rem 2rem 1.75rem;
+				flex-wrap: wrap;
+			}
+			.hero-cover {
+				width: 192px;
+				height: 192px;
+				border-radius: 6px;
+				box-shadow: 0 8px 36px rgba(0, 0, 0, 0.6);
+				object-fit: cover;
+				flex-shrink: 0;
+				background: linear-gradient(135deg, #e91e8c, #4a1942);
+			}
+			.hero-info {
+				display: flex;
+				flex-direction: column;
+				gap: 0.6rem;
+				min-width: 0;
+			}
+			.hero-kicker {
+				font-size: 0.8rem;
+				font-weight: 700;
+			}
+			.hero-title {
+				font-size: clamp(1.6rem, 4.5vw, 3.2rem);
+				font-weight: 800;
+				letter-spacing: -0.03em;
+				line-height: 1.05;
+			}
+			.hero-desc {
+				color: var(--text-sub);
+				font-size: 0.9rem;
+				max-width: 560px;
+			}
+			.hero-meta {
+				font-size: 0.85rem;
+				color: var(--text-sub);
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				flex-wrap: wrap;
+			}
+			.hero-meta strong {
+				color: var(--text);
+				font-weight: 700;
+			}
+
+			/* ─── Action row ─────────────────────────────────────────────────── */
+			.action-row {
+				display: flex;
+				align-items: center;
+				gap: 1.5rem;
+				padding: 0.5rem 2rem 1.5rem;
+			}
+			.play-all-btn {
+				width: 56px;
+				height: 56px;
+				border-radius: 50%;
+				background: var(--accent);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition:
+					transform var(--transition),
+					background var(--transition);
+				flex-shrink: 0;
+			}
+			.play-all-btn:hover {
+				background: var(--accent-hover);
+				transform: scale(1.06);
+			}
+			.play-all-btn svg {
+				width: 22px;
+				height: 22px;
+				color: #000;
+				margin-left: 2px;
+			}
+			.icon-btn {
+				color: var(--text-sub);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: color var(--transition);
+			}
+			.icon-btn:hover {
+				color: var(--text);
+			}
+			.icon-btn svg {
+				width: 28px;
+				height: 28px;
+			}
+
+			/* ─── Track List ─────────────────────────────────────────────────── */
+			.tracklist {
+				padding: 0.5rem 2rem 3rem;
+			}
+			.section-title {
+				font-size: 1.4rem;
+				font-weight: 800;
+				letter-spacing: -0.02em;
+				margin: 2rem 0 0.25rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.section-sub {
+				color: var(--text-sub);
+				font-size: 0.85rem;
+				margin-bottom: 0.75rem;
+			}
+			.list-head {
+				display: grid;
+				grid-template-columns: 32px 1fr 200px 64px 36px;
+				gap: 1rem;
+				padding: 0.4rem 0.8rem;
+				border-bottom: 1px solid #2a2a2a;
+				color: var(--text-sub);
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				margin-bottom: 0.25rem;
+			}
+			.row {
+				display: grid;
+				grid-template-columns: 32px 1fr 200px 64px 36px;
+				gap: 1rem;
+				align-items: center;
+				padding: 0.5rem 0.8rem;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: background var(--transition);
+			}
+			.row:hover {
+				background: var(--bg-highlight);
+			}
+			.row.active .row-title {
+				color: var(--accent);
+			}
+			.row.pending {
+				opacity: 0.6;
+			}
+			.row.unresolved .row-title::after {
+				content: " (no link yet)";
+				color: #888;
+				font-size: 0.75rem;
+				font-weight: 400;
+			}
+			.row-idx {
+				color: var(--text-sub);
+				font-size: 0.9rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.row-idx .row-eq {
+				display: none;
+				gap: 2px;
+				align-items: flex-end;
+				height: 14px;
+			}
+			.row.active .row-idx .row-num {
+				display: none;
+			}
+			.row.active.is-playing .row-idx .row-eq {
+				display: flex;
+			}
+			.eq-bar {
+				width: 3px;
+				background: var(--accent);
+				animation: eqMove 0.9s ease-in-out infinite;
+			}
+			.eq-bar:nth-child(1) {
+				animation-delay: 0s;
+				height: 60%;
+			}
+			.eq-bar:nth-child(2) {
+				animation-delay: 0.25s;
+				height: 100%;
+			}
+			.eq-bar:nth-child(3) {
+				animation-delay: 0.12s;
+				height: 40%;
+			}
+			@keyframes eqMove {
+				0%,
+				100% {
+					transform: scaleY(0.4);
+				}
+				50% {
+					transform: scaleY(1);
+				}
+			}
+			.row-track {
+				display: flex;
+				align-items: center;
+				gap: 0.85rem;
+				min-width: 0;
+			}
+			.row-art {
+				width: 40px;
+				height: 40px;
+				border-radius: 4px;
+				object-fit: cover;
+				flex-shrink: 0;
+				background: var(--bg-highlight);
+			}
+			.row-text {
+				min-width: 0;
+			}
+			.row-title {
+				font-size: 0.92rem;
+				font-weight: 500;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.row-artist {
+				font-size: 0.82rem;
+				color: var(--text-sub);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.row-album {
+				color: var(--text-sub);
+				font-size: 0.85rem;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.row-duration {
+				color: var(--text-sub);
+				font-size: 0.85rem;
+				text-align: left;
+			}
+			.row-open {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: var(--text-sub);
+				opacity: 0;
+				transition:
+					opacity var(--transition),
+					color var(--transition);
+			}
+			.row:hover .row-open {
+				opacity: 1;
+			}
+			.row-open:hover {
+				color: var(--accent);
+			}
+			.row-open svg {
+				width: 16px;
+				height: 16px;
+			}
+
+			/* ══════════════════════════════════════════════════════════════
+   PERSISTENT BOTTOM PLAYER (custom controls, real YouTube audio)
+══════════════════════════════════════════════════════════════ */
+			#player-bar {
+				position: fixed;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				height: var(--player-h);
+				background: #181818;
+				border-top: 1px solid #282828;
+				z-index: 200;
+				display: grid;
+				grid-template-columns: 1fr minmax(0, 720px) 1fr;
+				align-items: center;
+				padding: 0 1rem;
+				gap: 1rem;
+			}
+			.pb-now {
+				display: flex;
+				align-items: center;
+				gap: 0.8rem;
+				min-width: 0;
+			}
+			.pb-art {
+				width: 54px;
+				height: 54px;
+				border-radius: 4px;
+				object-fit: cover;
+				background: var(--bg-highlight);
+				flex-shrink: 0;
+			}
+			.pb-meta {
+				min-width: 0;
+			}
+			.pb-title {
+				font-size: 0.86rem;
+				font-weight: 600;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.pb-artist {
+				font-size: 0.78rem;
+				color: var(--text-sub);
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+			.pb-like {
+				color: var(--text-sub);
+				flex-shrink: 0;
+			}
+			.pb-like svg {
+				width: 18px;
+				height: 18px;
+			}
+			.pb-center {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				gap: 0.4rem;
+				min-width: 0;
+				width: 100%;
+			}
+			.pb-buttons {
+				display: flex;
+				align-items: center;
+				gap: 1.1rem;
+			}
+			.pb-btn {
+				color: var(--text-sub);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				transition: color var(--transition);
+			}
+			.pb-btn:hover {
+				color: var(--text);
+			}
+			.pb-btn svg {
+				width: 18px;
+				height: 18px;
+			}
+			.pb-play {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--text);
+				color: #000;
+			}
+			.pb-play:hover {
+				transform: scale(1.06);
+				background: #fff;
+			}
+			.pb-play svg {
+				width: 16px;
+				height: 16px;
+			}
+			.pb-seek-row {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				width: 100%;
+			}
+			.pb-time {
+				font-size: 0.7rem;
+				color: var(--text-sub);
+				min-width: 32px;
+				font-variant-numeric: tabular-nums;
+				text-align: center;
+			}
+			.pb-seek-wrap {
+				flex: 1;
+				height: 4px;
+				background: #4d4d4d;
+				border-radius: 2px;
+				position: relative;
+				cursor: pointer;
+			}
+			.pb-seek-wrap:hover {
+				height: 6px;
+			}
+			.pb-seek-fill {
+				height: 100%;
+				background: var(--text);
+				border-radius: 2px;
+				width: 0%;
+				position: relative;
+			}
+			.pb-seek-wrap:hover .pb-seek-fill {
+				background: var(--accent);
+			}
+			.pb-seek-fill::after {
+				content: "";
+				position: absolute;
+				right: -6px;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: var(--text);
+				opacity: 0;
+			}
+			.pb-seek-wrap:hover .pb-seek-fill::after {
+				opacity: 1;
+			}
+			.pb-right {
+				display: flex;
+				align-items: center;
+				justify-content: flex-end;
+				gap: 0.6rem;
+			}
+			.pb-vol-wrap {
+				display: flex;
+				align-items: center;
+				gap: 0.4rem;
+				width: 110px;
+			}
+			input[type="range"].pb-vol-slider {
+				-webkit-appearance: none;
+				appearance: none;
+				flex: 1;
+				height: 4px;
+				border-radius: 2px;
+				background: linear-gradient(
+					to right,
+					#fff var(--vol, 80%),
+					#4d4d4d var(--vol, 80%)
+				);
+				cursor: pointer;
+			}
+			input[type="range"].pb-vol-slider::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #fff;
+				cursor: pointer;
+			}
+			input[type="range"].pb-vol-slider::-moz-range-thumb {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: #fff;
+				border: none;
+				cursor: pointer;
+			}
+
+			/* ─── Responsive ─────────────────────────────────────────────────── */
+			@media (max-width: 860px) {
+				.sidebar {
+					display: none;
+				}
+				.list-head,
+				.row {
+					grid-template-columns: 28px 1fr 36px;
+				}
+				.row-album,
+				.list-head span:nth-child(3) {
+					display: none;
+				}
+				.list-head span:nth-child(4) {
+					display: none;
+				}
+				.row-duration {
+					display: none;
+				}
+				.hero {
+					align-items: center;
+				}
+				.hero-cover {
+					width: 120px;
+					height: 120px;
+				}
+				#player-bar {
+					grid-template-columns: 1fr auto;
+				}
+				.pb-right {
+					display: none;
+				}
+				.pb-meta {
+					max-width: 140px;
+				}
+			}
+			@media (max-width: 480px) {
+				.topbar,
+				.hero,
+				.action-row,
+				.tracklist {
+					padding-left: 1rem;
+					padding-right: 1rem;
+				}
+				.pb-like {
+					display: none;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Hidden YouTube player target — real audio lives here, just off-screen -->
+		<div id="yt-player-host"><div id="yt-player"></div></div>
+
+		<div id="key-banner">
+			⚠️ No YouTube API key set yet — tracks below will show a link icon you can
+			click to open them on YouTube, but won't auto-play here until you add a
+			free key (see the comment at the top of the code) or give a track a manual
+			<code>id</code> link.
+		</div>
+
+		<div class="layout">
+			<!-- ═══ SIDEBAR ════════════════════════════════════════════════ -->
+			<aside class="sidebar">
+				<div class="brand">
+					<div class="brand-mark">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path d="M8 5v14l11-7z" />
+						</svg>
+					</div>
+					<span class="brand-name" id="brand-name"
+						>Our Story in Hindi Songs</span
+					>
+				</div>
+				<nav class="nav-list">
+					<button class="nav-item active">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+							<path d="M9 22V12h6v10" />
+						</svg>
+						Home
+					</button>
+				</nav>
+				<div class="sidebar-divider"></div>
+				<div>
+					<div class="sidebar-section-title">Jump to</div>
+					<div id="sidebar-sections"></div>
+				</div>
+				<div class="sidebar-footer">
+					Real audio streams via YouTube's official IFrame Player API.
+					<br />Built with ♥
+				</div>
+			</aside>
+
+			<!-- ═══ MAIN ═══════════════════════════════════════════════════ -->
+			<main class="main" id="main">
+				<div class="topbar" id="topbar">
+					<div class="topbar-nav-arrows">
+						<div class="nav-arrow">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+							>
+								<polyline points="15 18 9 12 15 6" />
+							</svg>
+						</div>
+						<div class="nav-arrow">
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+							>
+								<polyline points="9 18 15 12 9 6" />
+							</svg>
+						</div>
+					</div>
+					<div class="profile-pill" id="profile-pill">U</div>
+				</div>
+
+				<!-- HERO -->
+				<section class="hero">
+					<img class="hero-cover" id="hero-cover" src="" alt="" />
+					<div class="hero-info">
+						<span class="hero-kicker">Playlist</span>
+						<h1 class="hero-title" id="hero-title"></h1>
+						<p class="hero-desc" id="hero-desc"></p>
+						<div class="hero-meta">
+							<strong id="hero-owner"></strong>
+							<span>•</span>
+							<span id="hero-count"></span>
+						</div>
+					</div>
+				</section>
+
+				<!-- ACTIONS -->
+				<section class="action-row">
+					<button class="play-all-btn" id="play-all-btn">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path d="M8 5v14l11-7z" />
+						</svg>
+					</button>
+					<button class="icon-btn" title="Like">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+							/>
+						</svg>
+					</button>
+				</section>
+
+				<!-- TRACK LIST -->
+				<section class="tracklist" id="tracklist"></section>
+			</main>
+		</div>
+
+		<!-- ═══ PERSISTENT PLAYER BAR ═══════════════════════════════════════ -->
+		<div id="player-bar">
+			<div class="pb-now">
+				<img class="pb-art" id="pb-art" src="" alt="" />
+				<div class="pb-meta">
+					<div class="pb-title" id="pb-title">Nothing playing</div>
+					<div class="pb-artist" id="pb-artist">Pick a track to start</div>
+				</div>
+				<button class="pb-like" title="Like">
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path
+							d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+						/>
+					</svg>
+				</button>
+			</div>
+
+			<div class="pb-center">
+				<div class="pb-buttons">
+					<button class="pb-btn" id="pb-prev" title="Previous">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path
+								d="M6 6h2v12H6zm3.5 6l8.5 6V6z"
+								transform="scale(-1,1) translate(-24,0)"
+							/>
+						</svg>
+					</button>
+					<button class="pb-btn pb-play" id="pb-play" title="Play / Pause">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path id="pb-play-path" d="M8 5v14l11-7z" />
+						</svg>
+					</button>
+					<button class="pb-btn" id="pb-next" title="Next">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+						</svg>
+					</button>
+				</div>
+				<div class="pb-seek-row">
+					<span class="pb-time" id="pb-time-cur">0:00</span>
+					<div class="pb-seek-wrap" id="pb-seek-wrap">
+						<div class="pb-seek-fill" id="pb-seek-fill"></div>
+					</div>
+					<span class="pb-time" id="pb-time-tot">0:00</span>
+				</div>
+			</div>
+
+			<div class="pb-right">
+				<div class="pb-vol-wrap">
+					<button class="pb-btn" id="pb-mute" title="Mute">
+						<svg viewBox="0 0 24 24" fill="currentColor">
+							<path
+								id="pb-vol-path"
+								d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+							/>
+						</svg>
+					</button>
+					<input
+						class="pb-vol-slider"
+						id="pb-vol-slider"
+						type="range"
+						min="0"
+						max="100"
+						step="1"
+						value="80"
+					/>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://www.youtube.com/iframe_api"></script>
+		<script>
+			/* ═══════════════════════════════════════════════════════════════════
+   ▸  SETTINGS — customize everything here!
+═══════════════════════════════════════════════════════════════════ */
+			const SETTINGS = {
+				youtubeApiKey: "AIzaSyAGHdh1qqifqKkDka21z2u4_AxkiJ-NtTI", // ← paste your free YouTube Data API v3 key here
+				siteName: "Our Story in Songs",
+				heroTitle: "Our Story in Songs",
+				heroDesc:
+					"Love, joy, memories, and hooks — organized completely seamlessly by mood into 10 unique collections.",
+				heroOwner: "You & Yours",
+				heroCover:
+					"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=600&q=80",
+
+				sections: [
+					{
+						title: "💃 The Desi Dance Floor",
+						subtitle: "High energy party anthems and ultimate item numbers.",
+						tracks: [
+							{
+								query: "Sheila Ki Jawani Tees Maar Khan",
+								title: "Sheila Ki Jawani",
+								artist: "Sunidhi Chauhan",
+								album: "Tees Maar Khan",
+							},
+							{
+								query: "Chikni Chameli Agneepath Shreya Ghoshal",
+								title: "Chikni Chameli",
+								artist: "Shreya Ghoshal",
+								album: "Agneepath",
+							},
+							{
+								query: "O Saki Saki Batla House Neha Kakkar",
+								title: "O Saki Saki",
+								artist: "Neha Kakkar",
+								album: "Batla House",
+							},
+							{
+								query: "Kamli Dhoom 3 Sunidhi Chauhan",
+								title: "Kamli",
+								artist: "Sunidhi Chauhan",
+								album: "Dhoom 3",
+							},
+							{
+								query: "Kar Gayi Chull Kapoor and Sons",
+								title: "Kar Gayi Chull",
+								artist: "Badshah, Fazilpuria",
+								album: "Kapoor & Sons",
+							},
+							{
+								query: "Love Mera Hit Hit Billu",
+								title: "Love Mera Hit Hit",
+								artist: "Neeraj Shridhar",
+								album: "Billu",
+							},
+							{
+								query: "Marjaani Billu Barber Sukhwinder",
+								title: "Marjaani",
+								artist: "Sukhwinder Singh",
+								album: "Billu",
+							},
+							{
+								query: "Dard E Disco Om Shanti Om Sukhwinder",
+								title: "Dard - E - Disco",
+								artist: "Sukhwinder Singh",
+								album: "Om Shanti Om",
+							},
+							{
+								query: "Jalebi Bai Double Dhamaal",
+								title: "Jalebi Bai",
+								artist: "Ritu Pathak",
+								album: "Double Dhamaal",
+							},
+							{
+								query: "Lucky Boy Bachna Ae Haseeno",
+								title: "Lucky Boy",
+								artist: "Sunidhi Chauhan",
+								album: "Bachna Ae Haseeno",
+							},
+							{
+								query: "The Disco Song Student of the Year",
+								title: "The Disco Song",
+								artist: "Benny Dayal",
+								album: "Student of the Year",
+							},
+							{
+								query: "Ghungroo War Arijit Singh Shilpa Rao",
+								title: "Ghungroo",
+								artist: "Arijit Singh, Shilpa Rao",
+								album: "War",
+							},
+							{
+								query: "Blue Hai Pani Pani Yaariyan",
+								title: "Blue Hai Pani - Pani",
+								artist: "Yo Yo Honey Singh",
+								album: "Yaariyan",
+							},
+							{
+								query: "Party On My Mind Race 2",
+								title: "Party On My Mind",
+								artist: "Benny Dayal, KK",
+								album: "Race 2",
+							},
+							{
+								query: "Aapka Kya Hoga Dhanno Housefull",
+								title: "Aapka Kya Hoga (Dhanno)",
+								artist: "Mika Singh",
+								album: "Housefull",
+							},
+							{
+								query: "Right Now Now Housefull Sunidhi Chauhan",
+								title: "Right Now Now",
+								artist: "Sunidhi Chauhan",
+								album: "Housefull",
+							},
+							{
+								query: "Munni Badnaam Hui Dabangg Mamta Sharma",
+								title: "Munni Badnaam",
+								artist: "Mamta Sharma",
+								album: "Dabangg",
+							},
+							{
+								query: "Ek Toh Kum Zindagani Marjaavaan",
+								title: "Ek Toh Kum Zindagani",
+								artist: "Neha Kakkar",
+								album: "Marjaavaan",
+							},
+							{
+								query: "Hookah Bar Khiladi 786 Himesh",
+								title: "Hookah Bar",
+								artist: "Himesh Reshammiya",
+								album: "Khiladi 786",
+							},
+							{
+								query: "Disco Disco A Gentleman Benny Dayal",
+								title: "Disco Disco",
+								artist: "Benny Dayal",
+								album: "A Gentleman",
+							},
+							{
+								query: "Anarkali Disco Chali Housefull 2",
+								title: "Anarkali Disco Chali",
+								artist: "Mamta Sharma",
+								album: "Housefull 2",
+							},
+							{
+								query: "Bebo Kambakkht Ishq Alisha Chinai",
+								title: "Bebo",
+								artist: "Alisha Chinai",
+								album: "Kambakkht Ishq",
+							},
+							{
+								query: "Jumme Ki Raat Kick Mika Singh",
+								title: "Jumme Ki Raat",
+								artist: "Mika Singh",
+								album: "Kick",
+							},
+							{
+								query: "Desi Look Ek Paheli Leela Kanika Kapoor",
+								title: "Desi Look",
+								artist: "Kanika Kapoor",
+								album: "Ek Paheli Leela",
+							},
+							{
+								query: "Aaj Ki Raat Don Alisha Chinai",
+								title: "Aaj Ki Raat",
+								artist: "Alisha Chinai",
+								album: "Don",
+							},
+						],
+					},
+					{
+						title: "🌐 Global Grooves & English Pop",
+						subtitle: "International radio hits, chill modern pop, and R&B.",
+						tracks: [
+							{
+								query: "Lovely English song",
+								title: "Lovely",
+								artist: "Billie Eilish, Khalid",
+								album: "13 Reasons Why",
+							},
+							{
+								query: "Young And Beautiful Lana Del Rey",
+								title: "Young And Beautiful",
+								artist: "Lana Del Rey",
+								album: "The Great Gatsby",
+							},
+							{
+								query: "Close Your Eyes and Listen Naturelle",
+								title: "Close Your Eyes and Listen",
+								artist: "Naturelle",
+								album: "Chill Beats",
+							},
+							{
+								query: "Scars To Your Beautiful Alessia Cara",
+								title: "Scars To Your Beautiful",
+								artist: "Alessia Cara",
+								album: "Know-It-All",
+							},
+							{
+								query: "Die With A Smile Bruno Mars Lady Gaga",
+								title: "Die With A Smile",
+								artist: "Bruno Mars, Lady Gaga",
+								album: "Single",
+							},
+							{
+								query: "Chicago Dandelions style song",
+								title: "Chicago",
+								artist: "Pop Artist",
+								album: "Vibes",
+							},
+							{
+								query: "Dandelions Ruth B",
+								title: "Dandelions",
+								artist: "Ruth B.",
+								album: "Safe Haven",
+							},
+							{
+								query: "safety net Ariana Grande Ty Dolla Sign",
+								title: "safety net",
+								artist: "Ariana Grande feat. Ty Dolla $ign",
+								album: "Positions",
+							},
+							{
+								query: "Winter Wonderland Michael Buble",
+								title: "Winter Wonderland",
+								artist: "Holiday Classic",
+								album: "Christmas",
+							},
+							{
+								query: "Snowman Sia",
+								title: "Snowman",
+								artist: "Sia",
+								album: "Everyday Is Christmas",
+							},
+							{
+								query: "Be My Baby The Ronettes",
+								title: "Be My Baby",
+								artist: "The Ronettes",
+								album: "Presenting the Ronettes",
+							},
+							{
+								query: "Brooklyn Baby Lana Del Rey",
+								title: "Brooklyn Baby",
+								artist: "Lana Del Rey",
+								album: "Ultraviolence",
+							},
+							{
+								query: "White Mustang Lana Del Rey",
+								title: "White Mustang",
+								artist: "Lana Del Rey",
+								album: "Lust for Life",
+							},
+							{
+								query: "Not You Too Drake Chris Brown",
+								title: "Not You Too",
+								artist: "Drake feat. Chris Brown",
+								album: "Dark Lane Demo Tapes",
+							},
+							{
+								query: "One Of The Girls The Weeknd Jennie Lily Rose Depp",
+								title: "One Of The Girls",
+								artist: "The Weeknd, JENNIE",
+								album: "The Idol OST",
+							},
+							{
+								query: "breathin Ariana Grande",
+								title: "breathin",
+								artist: "Ariana Grande",
+								album: "Sweetener",
+							},
+							{
+								query: "fake smile Ariana Grande",
+								title: "fake smile",
+								artist: "Ariana Grande",
+								album: "Thank U, Next",
+							},
+							{
+								query: "twilight zone pop song",
+								title: "twilight zone",
+								artist: "Wave",
+								album: "LoFi Pop",
+							},
+							{
+								query: "dandelion alternative song",
+								title: "dandelion",
+								artist: "Indie Pop",
+								album: "Acoustic",
+							},
+							{
+								query: "past life Trevor Daniel Selena Gomez",
+								title: "past life",
+								artist: "Trevor Daniel, Selena Gomez",
+								album: "Past Life",
+							},
+							{
+								query: "Thinking Bout You Frank Ocean",
+								title: "Thinking Bout You",
+								artist: "Frank Ocean",
+								album: "Channel Orange",
+							},
+							{
+								query: "Private Landing Don Toliver Justin Bieber Future",
+								title: "Private Landing",
+								artist: "Don Toliver, Justin Bieber",
+								album: "Love Sick",
+							},
+							{
+								query: "Lady Killers II G Eazy Slowed Remix",
+								title: "Lady Killers II (Slowed Remix)",
+								artist: "G-Eazy",
+								album: "Remixes",
+							},
+							{
+								query: "My Dil Goes Mmmm English Club Mix",
+								title: "My Dil Goes Mmmm (English Club Mix)",
+								artist: "Bollywood Remix",
+								album: "Salaam Namaste",
+							},
+						],
+					},
+					{
+						title: "📜 Golden Era & Nostalgia",
+						subtitle:
+							"Take a trip down memory lane with definitive 90s and 2000s milestones.",
+						tracks: [
+							{
+								query: "Yeh Ladka Hai Allah Kuch Kuch Hota Hai",
+								title: "Yeh Ladka Hai Allah",
+								artist: "Alka Yagnik, Udit Narayan",
+								album: "Kuch Kuch Hota Hai",
+							},
+							{
+								query: "Yeh Ladka Hai Deewana Kuch Kuch Hota Hai",
+								title: "Yeh Ladka Hai Deewana",
+								artist: "Udit Narayan, Alka Yagnik",
+								album: "Kuch Kuch Hota Hai",
+							},
+							{
+								query: "Kitaben Bahut Si Baazigar",
+								title: "Kitaben Bahut Si",
+								artist: "Asha Bhosle, Vinod Rathod",
+								album: "Baazigar",
+							},
+							{
+								query: "Deewangi Deewangi Om Shanti Om",
+								title: "Deewangi Deewangi",
+								artist: "Shaan, Udit Narayan, Shreya",
+								album: "Om Shanti Om",
+							},
+							{
+								query: "Ajab Si Om Shanti Om KK",
+								title: "Ajab Si",
+								artist: "KK",
+								album: "Om Shanti Om",
+							},
+							{
+								query: "Dhoom Taana Om Shanti Om Abhijeet Shreya",
+								title: "Dhoom Taana",
+								artist: "Abhijeet Bhattacharya, Shreya",
+								album: "Om Shanti Om",
+							},
+							{
+								query: "Aaja Nachle Sunidhi Chauhan title track",
+								title: "Aaja Nachle",
+								artist: "Sunidhi Chauhan",
+								album: "Aaja Nachle",
+							},
+							{
+								query: "Dekha Ek Khwab Pt 2 Silsila",
+								title: "Dekha Ek Khwab, Pt. 2",
+								artist: "Kishore Kumar, Lata Mangeshkar",
+								album: "Silsila",
+							},
+							{
+								query: "Ye Kaali Kaali Aankhen Baazigar Kumar Sanu",
+								title: "Ye Kaali Kaali Aankhen",
+								artist: "Kumar Sanu, Anu Malik",
+								album: "Baazigar",
+							},
+							{
+								query: "Baazigar O Baazigar Kumar Sanu Alka Yagnik",
+								title: "Baazigar O Baazigar",
+								artist: "Kumar Sanu, Alka Yagnik",
+								album: "Baazigar",
+							},
+							{
+								query: "Mere Khwabon Mein Dilwale Dulhania Le Jayenge",
+								title: "Mere Khwabon Mein",
+								artist: "Lata Mangeshkar",
+								album: "DDLJ",
+							},
+							{
+								query: "Chura Ke Dil Mera Main Khiladi Tu Anari",
+								title: "Chura Ke Dil Mera",
+								artist: "Kumar Sanu, Alka Yagnik",
+								album: "Main Khiladi Tu Anari",
+							},
+							{
+								query: "Main Khiladi Tu Anari Abhijeet Udit",
+								title: "Main Khiladi Tu Anari",
+								artist: "Abhijeet, Udit Narayan",
+								album: "Main Khiladi Tu Anari",
+							},
+							{
+								query: "Bholi Si Surat Dil To Pagal Hai",
+								title: "Bholi Si Surat",
+								artist: "Udit Narayan, Lata Mangeshkar",
+								album: "Dil To Pagal Hai",
+							},
+							{
+								query: "Woh Ladki Jo Baadshah Abhijeet",
+								title: "Woh Ladki Jo",
+								artist: "Abhijeet Bhattacharya",
+								album: "Baadshah",
+							},
+							{
+								query: "Ruk Ja O Dil Deewane DDLJ Udit Narayan",
+								title: "Ruk Ja O Dil Deewane",
+								artist: "Udit Narayan",
+								album: "DDLJ",
+							},
+							{
+								query: "O O Jaane Jaana Pyaar Kiya To Darna Kya",
+								title: "O O Jaane Jaana",
+								artist: "Kamaal Khan",
+								album: "Pyaar Kiya To Darna Kya",
+							},
+							{
+								query: "You Are My Soniya Kabhi Khushi Kabhie Gham",
+								title: "You Are My Soniya",
+								artist: "Sonu Nigam, Alka Yagnik",
+								album: "K3G",
+							},
+						],
+					},
+					{
+						title: "❤️ Pure Romance & Butterflies",
+						subtitle: "Beautiful modern and classic romantic melodies.",
+						tracks: [
+							{
+								query: "Chand Sifarish Fanaa Shaan",
+								title: "Chand Sifarish",
+								artist: "Shaan, Kailash Kher",
+								album: "Fanaa",
+							},
+							{
+								query: "Chahun Main Ya Naa Aashiqui 2",
+								title: "Chahun Main Ya Naa",
+								artist: "Arijit Singh, Palak Muchhal",
+								album: "Aashiqui 2",
+							},
+							{
+								query: "Teri Meri Bodyguard Rahat Fateh Ali Khan",
+								title: "Teri Meri",
+								artist: "Rahat Fateh Ali Khan, Shreya",
+								album: "Bodyguard",
+							},
+							{
+								query: "Main Yahaan Hoon Veer Zaara Udit Narayan",
+								title: "Main Yahaan Hoon",
+								artist: "Udit Narayan",
+								album: "Veer-Zaara",
+							},
+							{
+								query: "Teri Ore Singh Is Kinng Rahat Fateh",
+								title: "Teri Ore",
+								artist: "Rahat Fateh Ali Khan, Shreya",
+								album: "Singh Is Kinng",
+							},
+							{
+								query: "Tum Hi Ho Bandhu Cocktail Kavita Seth",
+								title: "Tum Hi Ho Bandhu",
+								artist: "Kavita Seth, Neeraj Shridhar",
+								album: "Cocktail",
+							},
+							{
+								query: "Sapna Jahan Brothers Arijit Singh",
+								title: "Sapna Jahan",
+								artist: "Arijit Singh, Neeti Mohan",
+								album: "Brothers",
+							},
+							{
+								query: "Jeene Laga Hoon Ramaiya Vastavaiya Atif Aslam",
+								title: "Jeene Laga Hoon",
+								artist: "Atif Aslam, Shreya Ghoshal",
+								album: "Ramaiya Vastavaiya",
+							},
+							{
+								query: "Bahara I Hate Luv Storys Shreya Ghoshal",
+								title: "Bahara",
+								artist: "Shreya Ghoshal, Sona Mohapatra",
+								album: "I Hate Luv Storys",
+							},
+							{
+								query: "Subhanallah Yeh Jawaani Hai Deewani Sreerama",
+								title: "Subhanallah",
+								artist: "Sreerama Chandra, Shilpa Rao",
+								album: "Yeh Jawaani Hai Deewani",
+							},
+							{
+								query: "Khuda Jaane Bachna Ae Haseeno KK Shilpa Rao",
+								title: "Khuda Jaane",
+								artist: "KK, Shilpa Rao",
+								album: "Bachna Ae Haseeno",
+							},
+							{
+								query: "Saiyaara Ek Tha Tiger Mohit Chauhan",
+								title: "Saiyaara",
+								artist: "Mohit Chauhan, Tarannum Malik",
+								album: "Ek Tha Tiger",
+							},
+							{
+								query: "Tumse Milke Dil Ka Main Hoon Na Sonu Nigam",
+								title: "Tumse Milke Dil Ka",
+								artist: "Sonu Nigam",
+								album: "Main Hoon Na",
+							},
+							{
+								query: "Tera Hone Laga Hoon Ajab Prem Atif Aslam",
+								title: "Tera Hone Laga Hoon",
+								artist: "Atif Aslam, Alisha Chinai",
+								album: "Ajab Prem Ki Ghazab Kahani",
+							},
+							{
+								query: "Sanam Re Title Track Arijit Singh",
+								title: "Sanam Re",
+								artist: "Arijit Singh",
+								album: "Sanam Re",
+							},
+							{
+								query: "Pehli Nazar Mein Race Atif Aslam",
+								title: "Pehli Nazar Mein",
+								artist: "Atif Aslam",
+								album: "Race",
+							},
+							{
+								query: "Hawayein Jab Harry Met Sejal Arijit Singh",
+								title: "Hawayein",
+								artist: "Arijit Singh",
+								album: "Jab Harry Met Sejal",
+							},
+							{
+								query: "Main Agar Kahoon Om Shanti Om Sonu Nigam",
+								title: "Main Agar Kahoon",
+								artist: "Sonu Nigam, Shreya Ghoshal",
+								album: "Om Shanti Om",
+							},
+							{
+								query: "Agar Tum Saath Ho Tamasha Alka Yagnik Arijit",
+								title: "Agar Tum Saath Ho",
+								artist: "Alka Yagnik, Arijit Singh",
+								album: "Tamasha",
+							},
+							{
+								query: "Tum Hi Ho Aashiqui 2 Arijit Singh",
+								title: "Tum Hi Ho",
+								artist: "Arijit Singh",
+								album: "Aashiqui 2",
+							},
+							{
+								query: "Mast Magan 2 States Arijit Singh",
+								title: "Mast Magan",
+								artist: "Arijit Singh, Chinmayi Sripada",
+								album: "2 States",
+							},
+							{
+								query: "Suraj Hua Maddham Kabhi Khushi Kabhie Gham Sonu",
+								title: "Suraj Hua Maddham",
+								artist: "Sonu Nigam, Alka Yagnik",
+								album: "K3G",
+							},
+							{
+								query: "Tu Jaane Na Ajab Prem Ki Ghazab Kahani Atif Aslam",
+								title: "Tu Jaane Na",
+								artist: "Atif Aslam",
+								album: "Ajab Prem Ki Ghazab Kahani",
+							},
+						],
+					},
+					{
+						title: "🎉 Sangeet & Desi Wedding Shenanigans",
+						subtitle:
+							"Bright group choreographies and festive family functions.",
+						tracks: [
+							{
+								query: "Kajra Re Bunty Aur Babli Alisha Chinai",
+								title: "Kajra Re",
+								artist: "Alisha Chinai, Shankar Mahadevan",
+								album: "Bunty Aur Babli",
+							},
+							{
+								query: "D Se Dance Humpty Sharma Ki Dulhania",
+								title: "D Se Dance",
+								artist: "Vishal Dadlani, Shalmali",
+								album: "Humpty Sharma Ki Dulhania",
+							},
+							{
+								query: "Chammo Housefull Sukhwinder Singh",
+								title: "Chammo",
+								artist: "Sukhwinder Singh",
+								album: "Housefull",
+							},
+							{
+								query: "Laal Dupatta Mujhse Shaadi Karogi",
+								title: "Laal Dupatta",
+								artist: "Alka Yagnik, Udit Narayan",
+								album: "Mujhse Shaadi Karogi",
+							},
+							{
+								query: "Balam Pichkari Yeh Jawaani Hai Deewani",
+								title: "Balam Pichkari",
+								artist: "Vishal Dadlani, Shalmali",
+								album: "Yeh Jawaani Hai Deewani",
+							},
+							{
+								query: "Dilliwaali Girlfriend Yeh Jawaani Hai Deewani",
+								title: "Dilliwaali Girlfriend",
+								artist: "Arijit Singh, Sunidhi Chauhan",
+								album: "Yeh Jawaani Hai Deewani",
+							},
+							{
+								query: "Chittiyaan Kalaiyaan Roy Kanika Kapoor",
+								title: "Chittiyaan Kalaiyaan",
+								artist: "Kanika Kapoor",
+								album: "Roy",
+							},
+							{
+								query: "Ucha Lamba Kad Welcome Anand Raj Anand",
+								title: "Ucha Lamba Kad",
+								artist: "Anand Raj Anand, Kalpana",
+								album: "Welcome",
+							},
+							{
+								query: "Ding Dang Munna Michael Amit Mishra",
+								title: "Ding Dang",
+								artist: "Amit Mishra, Antara Mitra",
+								album: "Munna Michael",
+							},
+							{
+								query: "Shake Karaan Munna Michael Meet Bros",
+								title: "Shake Karaan",
+								artist: "Kanika Kapoor, Meet Bros",
+								album: "Munna Michael",
+							},
+							{
+								query: "Shanivaar Raati Main Tera Hero",
+								title: "Shanivaar Raati",
+								artist: "Arijit Singh, Shalmali Kholgade",
+								album: "Main Tera Hero",
+							},
+							{
+								query: "Sharara Sharara Mere Yaar Ki Shaadi Hai",
+								title: "Sharara",
+								artist: "Asha Bhosle",
+								album: "Mere Yaar Ki Shaadi Hai",
+							},
+							{
+								query: "Saajanji Ghar Aaye Kuch Kuch Hota Hai",
+								title: "Saajanji Ghar Aaye",
+								artist: "Alka Yagnik, Kumar Sanu",
+								album: "Kuch Kuch Hota Hai",
+							},
+							{
+								query: "Sajna Say Yes To The Dress Badshah",
+								title: "Sajna, Say Yes To The Dress",
+								artist: "Badshah, Payal Dev",
+								album: "Single",
+							},
+							{
+								query: "Mere Mehboob Mere Sanam Duplicate Udit",
+								title: "Mere Mehboob Mere Sanam",
+								artist: "Udit Narayan, Alka Yagnik",
+								album: "Duplicate",
+							},
+							{
+								query: "Laung Da Lashkara Patiala House",
+								title: "Laung Da Lashkara",
+								artist: "Jasbir Jassi, Mahalakshmi Iyer",
+								album: "Patiala House",
+							},
+							{
+								query: "Hauli Hauli De De Pyaar De Neha Kakkar",
+								title: "Hauli Hauli",
+								artist: "Neha Kakkar, Garry Sandhu",
+								album: "De De Pyaar De",
+							},
+							{
+								query: "Mubarakan Title Track Mika Singh",
+								title: "Mubarakan (Title Track)",
+								artist: "Mika Singh, Juggy D",
+								album: "Mubarakan",
+							},
+							{
+								query: "Madhanya Rahul Vaidya Neha Kakkar",
+								title: "Madhanya",
+								artist: "Rahul Vaidya, Neha Kakkar",
+								album: "Single",
+							},
+							{
+								query: "Chiggy Wiggy Blue Sunidhi Chauhan Kylie Minogue",
+								title: "Chiggy Wiggy",
+								artist: "Kylie Minogue, Sonu Nigam",
+								album: "Blue",
+							},
+							{
+								query: "Chhote Chhote Peg Sonu Ke Titu Ki Sweety",
+								title: "Chhote Chhote Peg",
+								artist: "Yo Yo Honey Singh, Neha Kakkar",
+								album: "Sonu Ke Titu Ki Sweety",
+							},
+							{
+								query: "Raat Bhar Heropanti Arijit Singh Shreya",
+								title: "Raat Bhar",
+								artist: "Arijit Singh, Shreya Ghoshal",
+								album: "Heropanti",
+							},
+						],
+					},
+					{
+						title: "🌌 Lofi & Slowed Escapes",
+						subtitle:
+							"Atmospheric, chill edits built for unwinding late at night.",
+						tracks: [
+							{
+								query: "Teri Ore Lo Fi Flip Remix",
+								title: "Teri Ore (Lo-Fi Flip)",
+								artist: "Sreerama Chandra",
+								album: "Lofi Cuts",
+							},
+							{
+								query: "Falak Tak Lo Fi Chill mix",
+								title: "Falak Tak - Lo-Fi",
+								artist: "Mohit Chauhan",
+								album: "Sunset Lofi",
+							},
+							{
+								query: "Saibo Lofi Flip Shor in the city",
+								title: "Saibo - Lofi Flip",
+								artist: "Shreya Ghoshal",
+								album: "Chill Station",
+							},
+							{
+								query: "Khuda Jane Lo Fi Bachna Ae Haseeno",
+								title: "Khuda Jane - Lo-Fi",
+								artist: "KK, Shilpa Rao",
+								album: "Midnight Flips",
+							},
+							{
+								query: "Iktara Lo Fi Flip Wake Up Sid",
+								title: "Iktara - Lofi Flip",
+								artist: "Kavita Seth",
+								album: "Coffee Shop Beats",
+							},
+							{
+								query: "Jeene Laga Hoon Lofi Mix Ramaiya Vastavaiya",
+								title: "Jeene Laga Hoon (Lofi Mix)",
+								artist: "Atif Aslam",
+								album: "Bedtime Remixes",
+							},
+							{
+								query: "Jeena Jeena Lofi Badlapur",
+								title: "Jeena Jeena - Lofi",
+								artist: "Atif Aslam",
+								album: "Slipped Beats",
+							},
+							{
+								query: "Zara Sa Trending Version Emraan Hashmi KK",
+								title: "Zara Sa - Trending Version",
+								artist: "KK",
+								album: "Jannat",
+							},
+						],
+					},
+					{
+						title: "🔥 Swagger, Bass & Desi Hip-Hop",
+						subtitle:
+							"Heavy bass, strong presence, club floors, and urban attitude.",
+						tracks: [
+							{
+								query: "Zara Zara Touch Me Race Monali Thakur",
+								title: "Zara Zara Touch Me",
+								artist: "Monali Thakur",
+								album: "Race",
+							},
+							{
+								query: "Allah Maaf Kare Tevar Mika Singh",
+								title: "Allah Maaf Kare",
+								artist: "Mika Singh",
+								album: "Tevar",
+							},
+							{
+								query: "Baby Doll Ragini MMS 2 Kanika Kapoor",
+								title: "Baby Doll (From Ragini Mms 2)",
+								artist: "Kanika Kapoor",
+								album: "Ragini MMS 2",
+							},
+							{
+								query: "Malamaal Housefull 3 Mika Singh",
+								title: "Malamaal",
+								artist: "Mika Singh, Kanika Kapoor",
+								album: "Housefull 3",
+							},
+							{
+								query: "Pyar Ki Housefull 3 Sharib Toshi",
+								title: "Pyar Ki",
+								artist: "Sharib-Toshi",
+								album: "Housefull 3",
+							},
+							{
+								query: "Nashe Si Chadh Gayi Befikre Arijit Singh",
+								title: "Nashe Si Chadh Gayi",
+								artist: "Arijit Singh",
+								album: "Befikre",
+							},
+							{
+								query: "Main Hoon Don Title Track Shaan",
+								title: "Main Hoon Don",
+								artist: "Shaan",
+								album: "Don",
+							},
+							{
+								query: "Zaraa Dil Ko Thaam Lo Don 2 Vishal Dadlani",
+								title: "Zaraa Dil Ko Thaam Lo",
+								artist: "Vishal Dadlani, Anusha Mani",
+								album: "Don 2",
+							},
+							{
+								query: "Too Cheez Badi Hain Machine Neha Kakkar Udit",
+								title: "Too Cheez Badi Hain",
+								artist: "Neha Kakkar, Udit Narayan",
+								album: "Machine",
+							},
+							{
+								query: "Palat Tera Hero Idhar Hai Arijit Singh",
+								title: "Palat - Tera Hero Idhar Hai",
+								artist: "Arijit Singh",
+								album: "Main Tera Hero",
+							},
+							{
+								query: "Crazy Kiya Re Dhoom 2 Sunidhi Chauhan",
+								title: "Crazy Kiya Re",
+								artist: "Sunidhi Chauhan",
+								album: "Dhoom 2",
+							},
+							{
+								query: "Babuji Zara Dheere Chalo Sukhwinder",
+								title: "Babuji Zara Dheere Chalo",
+								artist: "Sukhwinder Singh, Sonu Kakkar",
+								album: "Dum",
+							},
+							{
+								query: "Baby Ko Bass Pasand Hai Sultan Vishal Dadlani",
+								title: "Baby Ko Bass Pasand Hai",
+								artist: "Vishal Dadlani, Shalmali",
+								album: "Sultan",
+							},
+							{
+								query: "Ankhiyan Na Maar Pop song",
+								title: "Ankhiyan Na Maar",
+								artist: "Preet Harpal",
+								album: "Single",
+							},
+							{
+								query: "Tauba Tauba Bad Newz Vicky Kaushal Karan Aujla",
+								title: "Tauba Tauba",
+								artist: "Karan Aujla",
+								album: "Bad Newz",
+							},
+							{
+								query: "Chamma Chamma Fraud Saiyaan Neha Kakkar",
+								title: "Chamma Chamma",
+								artist: "Neha Kakkar",
+								album: "Fraud Saiyaan",
+							},
+							{
+								query: "Mauja Hi Mauja Jab We Met Mika Singh",
+								title: "Mauja Hi Mauja",
+								artist: "Mika Singh",
+								album: "Jab We Met",
+							},
+							{
+								query: "Allah Duhai Hai Race 3 Salman Khan",
+								title: "Allah Duhai Hai",
+								artist: "Amit Mishra, Jonita Gandhi",
+								album: "Race 3",
+							},
+							{
+								query: "Gali Gali KGF Chapter 1 Neha Kakkar",
+								title: "Gali Gali (From Kgf Chapter 1)",
+								artist: "Neha Kakkar",
+								album: "KGF: Chapter 1",
+							},
+							{
+								query: "Illegal Weapon 2.0 Street Dancer 3D Jasmine",
+								title: "Illegal Weapon 2.0 (From Street Dancer 3D)",
+								artist: "Jasmine Sandlas, Garry Sandhu",
+								album: "Street Dancer 3D",
+							},
+							{
+								query: "Naah Harrdy Sandhu Nora Fatehi",
+								title: "Naah",
+								artist: "Harrdy Sandhu",
+								album: "Single",
+							},
+							{
+								query: "Najaa Sooryavanshi Pav Dharia",
+								title: "Najaa (From Sooryavanshi)",
+								artist: "Pav Dharia, Nikhita Gandhi",
+								album: "Sooryavanshi",
+							},
+							{
+								query: "Bom Diggy Diggy Sonu Ke Titu Ki Sweety Zack",
+								title: "Bom Diggy Diggy",
+								artist: "Zack Knight, Jasmin Walia",
+								album: "Sonu Ke Titu Ki Sweety",
+							},
+							{
+								query: "Blue Eyes Yo Yo Honey Singh",
+								title: "Blue Eyes",
+								artist: "Yo Yo Honey Singh",
+								album: "Single",
+							},
+							{
+								query: "White Brown Black Avvy Sra Karan Aujla",
+								title: "White Brown Black",
+								artist: "Avvy Sra, Karan Aujla",
+								album: "Single",
+							},
+							{
+								query: "Cheques Shubh",
+								title: "Cheques",
+								artist: "Shubh",
+								album: "Still Rollin",
+							},
+							{
+								query: "Pind Nanke Punjabi Song",
+								title: "Pind Nanke",
+								artist: "Gippy Grewal",
+								album: "Single",
+							},
+						],
+					},
+					{
+						title: "🕌 Royal & Classical Grandeur",
+						subtitle:
+							"Sweeping structural arrangements and poetic period-drama pieces.",
+						tracks: [
+							{
+								query: "Dola Re Dola Devdas Shreya Ghoshal Kavita",
+								title: "Song: Dola Re",
+								artist: "Kavita Krishnamurthy, Shreya Ghoshal",
+								album: "Devdas",
+							},
+							{
+								query: "Silsila Ye Chahat Ka Devdas Shreya Ghoshal",
+								title: "Song: Silsila Ye Chahat Ka",
+								artist: "Shreya Ghoshal",
+								album: "Devdas",
+							},
+							{
+								query: "Dialogue Devdas Arrives Paro Is Informed",
+								title: "Dialogue: Devdas Arrives - Paro Is Informed",
+								artist: "Shah Rukh Khan, Aishwarya Rai",
+								album: "Devdas",
+							},
+							{
+								query: "Song Woh Chand Jaisi Ladki Devdas Udit",
+								title: "Song: Woh Chand Jaisi Ladki",
+								artist: "Udit Narayan",
+								album: "Devdas",
+							},
+							{
+								query: "Song Bairi Piya Devdas Shreya Ghoshal Udit",
+								title: "Song: Bairi Piya",
+								artist: "Shreya Ghoshal, Udit Narayan",
+								album: "Devdas",
+							},
+							{
+								query: "Song Morey Piya Devdas Shreya Ghoshal Jaspinder",
+								title: "Song: Morey Piya",
+								artist: "Shreya Ghoshal, Jaspinder Narula",
+								album: "Devdas",
+							},
+							{
+								query: "Song Kaahe Chhed Devdas Birju Maharaj Madhuri",
+								title: "Song: Kaahe Chhed",
+								artist: "Pt. Birju Maharaj, Kavita, Madhuri",
+								album: "Devdas",
+							},
+							{
+								query: "Song Maar Dala Devdas Kavita Krishnamurthy",
+								title: "Song: Maar Dala",
+								artist: "Kavita Krishnamurthy",
+								album: "Devdas",
+							},
+							{
+								query: "Song Chalak Chalak Devdas Udit Narayan Vinod",
+								title: "Song: Chalak Chalak",
+								artist: "Udit Narayan, Vinod Rathod",
+								album: "Devdas",
+							},
+							{
+								query: "Ghar More Pardesiya Kalank Shreya Ghoshal",
+								title: "Ghar More Pardesiya",
+								artist: "Shreya Ghoshal, Vaishali Mhade",
+								album: "Kalank",
+							},
+							{
+								query: "Tabaah Ho Gaye Kalank Madhuri Dixit Shreya",
+								title: "Tabaah Ho Gaye (Kalank)",
+								artist: "Shreya Ghoshal",
+								album: "Kalank",
+							},
+							{
+								query: "Rajvaadi Odhni Shreya Ghoshal",
+								title: "Rajvaadi Odhni",
+								artist: "Shreya Ghoshal",
+								album: "Kalank",
+							},
+							{
+								query: "First Class Kalank Arijit Singh Neeti Mohan",
+								title: "First Class (Kalank)",
+								artist: "Arijit Singh, Neeti Mohan",
+								album: "Kalank",
+							},
+							{
+								query: "Kalank Title Track Arijit Singh",
+								title: "Kalank (Title Track)",
+								artist: "Arijit Singh",
+								album: "Kalank",
+							},
+						],
+					},
+					{
+						title: "🕌 Soulful & Sufi",
+						subtitle:
+							"Vocal powerhouses grounded in spiritual textures and poetic warmth.",
+						tracks: [
+							{
+								query: "Sajdaa My Name Is Khan Rahat Fateh Ali",
+								title: "Sajdaa",
+								artist: "Rahat Fateh Ali Khan, Shankar Mahadevan",
+								album: "My Name Is Khan",
+							},
+							{
+								query: "Guzarish Ghajini Javed Ali Sonu Nigam",
+								title: "Guzarish",
+								artist: "Javed Ali, Sonu Nigam",
+								album: "Ghajini",
+							},
+							{
+								query: "Chaiyya Chaiyya Dil Se Sukhwinder Singh",
+								title: "Chaiyya Chaiyya",
+								artist: "Sukhwinder Singh, Sapna Awasthi",
+								album: "Dil Se",
+							},
+							{
+								query: "O Re Piya Aaja Nachle Rahat Fateh Ali Khan",
+								title: "O Re Piya",
+								artist: "Rahat Fateh Ali Khan",
+								album: "Aaja Nachle",
+							},
+							{
+								query: "Mere Rashke Qamar Baadshaho Rahat Fateh Ali",
+								title: "Mere Rashke Qamar",
+								artist: "Rahat Fateh Ali Khan",
+								album: "Baadshaho",
+							},
+							{
+								query: "Ishq Sufiyana Dirty Picture Kamal Khan",
+								title: "Ishq Sufiyana (Male)",
+								artist: "Kamal Khan",
+								album: "The Dirty Picture",
+							},
+							{
+								query: "Piya O Re Piya Tere Naal Love Ho Gaya Atif Aslam",
+								title: "Piya O Re Piya",
+								artist: "Atif Aslam, Shreya Ghoshal",
+								album: "Tere Naal Love Ho Gaya",
+							},
+							{
+								query: "Jogi Mahi Bachna Ae Haseeno Sukhwinder",
+								title: "Jogi Mahi",
+								artist: "Sukhwinder Singh, Shekhar Ravjiani",
+								album: "Bachna Ae Haseeno",
+							},
+							{
+								query: "Aahista Aahista Laila Majnu Arijit Singh",
+								title: "Aahista Aahista",
+								artist: "Arijit Singh, Shreya Ghoshal",
+								album: "Laila Majnu",
+							},
+							{
+								query: "Jiya Re Jab Tak Hai Jaan Neeti Mohan",
+								title: "Jiya Re",
+								artist: "Neeti Mohan",
+								album: "Jab Tak Hai Jaan",
+							},
+							{
+								query: "Tu Meri Roja Roja SP Balasubrahmanyam",
+								title: "Tu Meri Roja (From Kushi)",
+								artist: "S.P. Balasubrahmanyam",
+								album: "Roja",
+							},
+							{
+								query: "Kushi Title Song Hariharan Sadhana Sargam",
+								title: "Kushi Title Song (From Kushi)",
+								artist: "Hariharan",
+								album: "Kushi",
+							},
+							{
+								query: "Iktara Wake Up Sid Kavita Seth",
+								title: "Iktara",
+								artist: "Kavita Seth, Amitabh Bhattacharya",
+								album: "Wake Up Sid",
+							},
+							{
+								query: "Banjaara Ek Villain Mohammed Irfan",
+								title: "Banjaara (From Ek Villain)",
+								artist: "Mohammed Irfan",
+								album: "Ek Villain",
+							},
+							{
+								query: "Kurbaan Hua Title Track Vishal Dadlani",
+								title: "Kurbaan Hua",
+								artist: "Vishal Dadlani",
+								album: "Kurbaan",
+							},
+						],
+					},
+					{
+						title: "🌧️ Heartbreak & Melancholy",
+						subtitle:
+							"Reflective and deeply moving ballads written for quiet evenings.",
+						tracks: [
+							{
+								query: "Dil De Diya De Dana Dan Anand Raj Anand",
+								title: "Dil De Diya",
+								artist: "Anand Raj Anand, Sunidhi Chauhan",
+								album: "De Dana Dan",
+							},
+							{
+								query: "Janam Janam Dilwale Arijit Singh Antara",
+								title: "Janam Janam",
+								artist: "Arijit Singh, Antara Mitra",
+								album: "Dilwale",
+							},
+							{
+								query: "Kabira Yeh Jawaani Hai Deewani Tochi Raina",
+								title: "Kabira",
+								artist: "Tochi Raina, Rekha Bhardwaj",
+								album: "Yeh Jawaani Hai Deewani",
+							},
+							{
+								query: "Channa Mereya Ae Dil Hai Mushkil Arijit Singh",
+								title: "Channa Mereya",
+								artist: "Arijit Singh",
+								album: "Ae Dil Hai Mushkil",
+							},
+							{
+								query: "Khairiyat Chhichhore Arijit Singh",
+								title: "Khairiyat",
+								artist: "Arijit Singh",
+								album: "Chhichhore",
+							},
+							{
+								query: "Jee Le Zaraa Talaash Vishal Dadlani",
+								title: "Jee Le Zaraa",
+								artist: "Vishal Dadlani",
+								album: "Talaash",
+							},
+							{
+								query: "Raabta Agent Vinod Arijit Singh Joy",
+								title: "Raabta",
+								artist: "Arijit Singh, Shreya Ghoshal",
+								album: "Agent Vinod",
+							},
+							{
+								query: "Ilahi Yeh Jawaani Hai Deewani Arijit Singh",
+								title: "Ilahi",
+								artist: "Arijit Singh",
+								album: "Yeh Jawaani Hai Deewani",
+							},
+							{
+								query: "Jalte Diye Prem Ratan Dhan Payo Anwesshaa",
+								title: "Jalte Diye",
+								artist: "Anwesshaa, Vineet Singh",
+								album: "PRDP",
+							},
+							{
+								query: "Kal Ki Hi Baat Hai Chhichhore Shreya Ghoshal",
+								title: "Kal Ki Hi Baat Hai",
+								artist: "Shreya Ghoshal",
+								album: "Chhichhore",
+							},
+							{
+								query: "Shayad Love Aaj Kal Arijit Singh",
+								title: "Shayad",
+								artist: "Arijit Singh",
+								album: "Love Aaj Kal",
+							},
+							{
+								query: "Colder alternative song",
+								title: "Colder",
+								artist: "Indie Artist",
+								album: "Chill",
+							},
+							{
+								query: "Baarish Yaariyan Mohammed Irfan",
+								title: "Baarish",
+								artist: "Mohammed Irfan",
+								album: "Yaariyan",
+							},
+							{
+								query: "Chale Aana De De Pyaar De Armaan Malik",
+								title: "Chale Aana",
+								artist: "Armaan Malik",
+								album: "De De Pyaar De",
+							},
+							{
+								query: "Laapata Ek Tha Tiger KK Palak Muchhal",
+								title: "Laapata",
+								artist: "KK, Palak Muchhal",
+								album: "Ek Tha Tiger",
+							},
+							{
+								query: "Samajh Kar Chand Jis Ko Baazigar Vinod Rathod",
+								title: "Samajh Kar Chand Jis Ko",
+								artist: "Vinod Rathod, Alka Yagnik",
+								album: "Baazigar",
+							},
+							{
+								query: "Adhoore I Hate Luv Storys Vishal Dadlani",
+								title: "Adhoore",
+								artist: "Vishal Dadlani, Alyssa Mendonsa",
+								album: "I Hate Luv Storys",
+							},
+							{
+								query: "Dil Bechara Title Track Arijit Singh",
+								title: "Dil Bechara",
+								artist: "Arijit Singh",
+								album: "Dil Bechara",
+							},
+							{
+								query: "Ek Hasina Thi Ek Diwana Tha Title Track",
+								title: "Ek Hasina Thi Ek Diwana Tha",
+								artist: "Yaseer Desai",
+								album: "Ek Hasina Thi Ek Diwana Tha",
+							},
+							{
+								query: "Kya Khabar Thi Jaana Khiladi Abhijeet Alka",
+								title: "Kya Khabar Thi Jaana",
+								artist: "Abhijeet, Alka Yagnik",
+								album: "Khiladi",
+							},
+							{
+								query: "Ae Dil Hai Mushkil Title Track Arijit Singh",
+								title: "Ae Dil Hai Mushkil Title Track",
+								artist: "Arijit Singh",
+								album: "Ae Dil Hai Mushkil",
+							},
+						],
+					},
+				],
+			};
+			/* ═══════════════════════════════════════════════════════════════ */
+
+			function extractYouTubeId(input) {
+				if (!input) return "";
+				const s = String(input).trim();
+				let m = s.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+				if (m) return m[1];
+				m = s.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+				if (m) return m[1];
+				m = s.match(/embed\/([a-zA-Z0-9_-]{11})/);
+				if (m) return m[1];
+				if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
+				return s;
+			}
+			function fmtTime(s) {
+				s = Math.max(0, Math.floor(s || 0));
+				return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+			}
+
+			const FLAT_TRACKS = SETTINGS.sections.flatMap((s) => s.tracks);
+			let currentIdx = -1;
+			let ytPlayer = null;
+			let ytReady = false;
+			let pendingPlayIdx = null;
+			let pollTimer = null;
+			let isPlaying = false;
+			let isMuted = false;
+			let lastVolume = 80;
+			const rowEls = [];
+			const inFlight = {};
+
+			/* ── Auto-resolve via YouTube Data API + localStorage cache ──── */
+			async function resolveTrack(t) {
+				if (t.id) return { id: extractYouTubeId(t.id), thumb: t.cover || null };
+				if (!t.query) return null;
+				const cacheKey = "ytresolve:" + t.query;
+				try {
+					const cached = localStorage.getItem(cacheKey);
+					if (cached) return JSON.parse(cached);
+				} catch (e) {}
+				if (inFlight[t.query]) return inFlight[t.query];
+				if (!SETTINGS.youtubeApiKey) return null;
+				const p = fetch(
+					"https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" +
+						encodeURIComponent(t.query) +
+						"&key=" +
+						SETTINGS.youtubeApiKey,
+				)
+					.then((r) => r.json())
+					.then((data) => {
+						const item = data.items && data.items[0];
+						if (!item) return null;
+						const result = {
+							id: item.id.videoId,
+							thumb: item.snippet.thumbnails.medium.url,
+						};
+						try {
+							localStorage.setItem(cacheKey, JSON.stringify(result));
+						} catch (e) {}
+						return result;
+					})
+					.catch(() => null);
+				inFlight[t.query] = p;
+				return p;
+			}
+
+			function updateRowArt(idx, thumb) {
+				const row = rowEls[idx];
+				if (!row || !thumb) return;
+				const img = row.querySelector(".row-art");
+				if (img && !FLAT_TRACKS[idx].cover) img.src = thumb;
+			}
+
+			function eagerResolveAll() {
+				if (!SETTINGS.youtubeApiKey) {
+					document.getElementById("key-banner").classList.add("show");
+					return;
+				}
+				FLAT_TRACKS.forEach((t, idx) => {
+					if (t.id) return;
+					resolveTrack(t).then((res) => {
+						if (res) {
+							t.resolvedId = res.id;
+							updateRowArt(idx, res.thumb);
+							rowEls[idx]?.classList.remove("unresolved");
+						} else {
+							rowEls[idx]?.classList.add("unresolved");
+						}
+					});
+				});
+			}
+
+			/* ── Build UI ──────────────────────────────────────────────────── */
+			function buildBrand() {
+				document.getElementById("brand-name").textContent = SETTINGS.siteName;
+				document.getElementById("profile-pill").textContent = (
+					SETTINGS.heroOwner || "U"
+				)
+					.charAt(0)
+					.toUpperCase();
+			}
+			function buildHero() {
+				document.getElementById("hero-cover").src = SETTINGS.heroCover;
+				document.getElementById("hero-title").textContent = SETTINGS.heroTitle;
+				document.getElementById("hero-desc").textContent = SETTINGS.heroDesc;
+				document.getElementById("hero-owner").textContent = SETTINGS.heroOwner;
+				document.getElementById("hero-count").textContent =
+					FLAT_TRACKS.length + (FLAT_TRACKS.length === 1 ? " song" : " songs");
+			}
+			function buildSidebarLinks() {
+				const c = document.getElementById("sidebar-sections");
+				SETTINGS.sections.forEach((sec, i) => {
+					const a = document.createElement("a");
+					a.className = "sidebar-link";
+					a.href = "#section-" + i;
+					a.textContent = sec.title;
+					c.appendChild(a);
+				});
+			}
+
+			function buildTrackList() {
+				const c = document.getElementById("tracklist");
+				let flatIdx = 0;
+				SETTINGS.sections.forEach((sec, si) => {
+					const h = document.createElement("h2");
+					h.className = "section-title";
+					h.id = "section-" + si;
+					h.textContent = sec.title;
+					c.appendChild(h);
+
+					if (sec.subtitle) {
+						const sub = document.createElement("div");
+						sub.className = "section-sub";
+						sub.textContent = sec.subtitle;
+						c.appendChild(sub);
+					}
+
+					const head = document.createElement("div");
+					head.className = "list-head";
+					head.innerHTML =
+						"<span>#</span><span>Title</span><span>Album</span><span>Time</span><span></span>";
+					c.appendChild(head);
+
+					sec.tracks.forEach((t) => {
+						const myIdx = flatIdx++;
+						const row = document.createElement("div");
+						row.className = "row";
+						const openHref = t.id
+							? "https://www.youtube.com/watch?v=" + extractYouTubeId(t.id)
+							: "https://www.youtube.com/results?search_query=" +
+								encodeURIComponent(t.query || t.title);
+						row.innerHTML = `
+              <div class="row-idx">
+                <span class="row-num">${myIdx + 1}</span>
+                <div class="row-eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>
+              </div>
+              <div class="row-track">
+                <img class="row-art" src="${t.cover || ""}" alt="">
+                <div class="row-text">
+                  <div class="row-title">${t.title}</div>
+                  <div class="row-artist">${t.artist || ""}</div>
+                </div>
+              </div>
+              <div class="row-album">${t.album || ""}</div>
+              <div class="row-duration" id="row-duration-${myIdx}">--:--</div>
+              <a class="row-open" href="${openHref}" target="_blank" title="Open on YouTube" onclick="event.stopPropagation()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>`;
+						row.onclick = () => loadAndPlay(myIdx);
+						c.appendChild(row);
+						rowEls[myIdx] = row;
+					});
+				});
+			}
+
+			/* ── YouTube IFrame API ───────────────────────────────────────── */
+			function onYouTubeIframeAPIReady() {
+				ytPlayer = new YT.Player("yt-player", {
+					height: "2",
+					width: "2",
+					playerVars: {
+						controls: 0,
+						disablekb: 1,
+						modestbranding: 1,
+						playsinline: 1,
+						origin: window.location.origin,
+					},
+					events: {
+						onReady: () => {
+							ytReady = true;
+							ytPlayer.setVolume(lastVolume);
+							if (pendingPlayIdx !== null) {
+								const idx = pendingPlayIdx;
+								pendingPlayIdx = null;
+								loadAndPlay(idx);
+							}
+						},
+						onStateChange: onPlayerStateChange,
+					},
+				});
+			}
+			window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+			function onPlayerStateChange(e) {
+				if (e.data === YT.PlayerState.PLAYING) {
+					isPlaying = true;
+					setPlayIcon(true);
+					startPolling();
+					if (currentIdx >= 0) {
+						const dur = ytPlayer.getDuration();
+						const el = document.getElementById("row-duration-" + currentIdx);
+						if (el && dur) el.textContent = fmtTime(dur);
+					}
+				} else if (
+					e.data === YT.PlayerState.PAUSED ||
+					e.data === YT.PlayerState.BUFFERING
+				) {
+					isPlaying = e.data === YT.PlayerState.BUFFERING ? isPlaying : false;
+					setPlayIcon(isPlaying);
+					if (e.data === YT.PlayerState.PAUSED) stopPolling();
+				} else if (e.data === YT.PlayerState.ENDED) {
+					isPlaying = false;
+					stopPolling();
+					playNext();
+				}
+			}
+			function startPolling() {
+				stopPolling();
+				pollTimer = setInterval(() => {
+					if (!ytPlayer || !ytPlayer.getCurrentTime) return;
+					const cur = ytPlayer.getCurrentTime() || 0;
+					const dur = ytPlayer.getDuration() || 0;
+					updateSeekUI(cur, dur);
+				}, 250);
+			}
+			function stopPolling() {
+				clearInterval(pollTimer);
+				pollTimer = null;
+			}
+			function updateSeekUI(cur, dur) {
+				document.getElementById("pb-time-cur").textContent = fmtTime(cur);
+				document.getElementById("pb-time-tot").textContent = fmtTime(dur);
+				const pct = dur ? (cur / dur) * 100 : 0;
+				document.getElementById("pb-seek-fill").style.width = pct + "%";
+			}
+			function setPlayIcon(playing) {
+				const path = document.getElementById("pb-play-path");
+				path.outerHTML = playing
+					? '<g id="pb-play-path"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g>'
+					: '<path id="pb-play-path" d="M8 5v14l11-7z"/>';
+				if (currentIdx >= 0 && rowEls[currentIdx]) {
+					rowEls[currentIdx].classList.toggle("is-playing", playing);
+				}
+			}
+
+			/* ── Track control ────────────────────────────────────────────── */
+			async function loadAndPlay(idx) {
+				const t = FLAT_TRACKS[idx];
+				if (!t) return;
+				let id = t.id ? extractYouTubeId(t.id) : t.resolvedId;
+				if (!id) {
+					if (!SETTINGS.youtubeApiKey) {
+						alert(
+							'No YouTube API key is set, and "' +
+								t.title +
+								"\" doesn't have a manual link yet.\n\nEither add a free YouTube Data API key in SETTINGS (see the comment at the top of the file), or give this track an explicit `id` with a YouTube link.",
+						);
+						return;
+					}
+					rowEls[idx]?.classList.add("pending");
+					const res = await resolveTrack(t);
+					rowEls[idx]?.classList.remove("pending");
+					if (!res) {
+						rowEls[idx]?.classList.add("unresolved");
+						alert(
+							"Couldn't find \"" +
+								t.title +
+								'" on YouTube automatically. Try adding a manual `id` link for it in SETTINGS.',
+						);
+						return;
+					}
+					id = res.id;
+					t.resolvedId = id;
+					updateRowArt(idx, res.thumb);
+				}
+
+				if (!ytReady) {
+					pendingPlayIdx = idx;
+					setNowPlayingUI(t, id);
+					return;
+				}
+
+				if (currentIdx >= 0 && rowEls[currentIdx]) {
+					rowEls[currentIdx].classList.remove("active", "is-playing");
+				}
+				currentIdx = idx;
+				rowEls[idx].classList.add("active");
+				setNowPlayingUI(t, id);
+				ytPlayer.loadVideoById(id);
+				ytPlayer.playVideo();
+			}
+			function setNowPlayingUI(t, id) {
+				document.getElementById("pb-art").src =
+					t.cover ||
+					(id ? "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg" : "");
+				document.getElementById("pb-title").textContent = t.title;
+				document.getElementById("pb-artist").textContent =
+					t.artist || t.album || "";
+			}
+			function togglePlay() {
+				if (!ytReady || currentIdx < 0) {
+					if (FLAT_TRACKS.length) loadAndPlay(0);
+					return;
+				}
+				const state = ytPlayer.getPlayerState();
+				if (state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+				else ytPlayer.playVideo();
+			}
+			function playNext() {
+				if (!FLAT_TRACKS.length) return;
+				const next = (currentIdx + 1) % FLAT_TRACKS.length;
+				loadAndPlay(next);
+			}
+			function playPrev() {
+				if (!FLAT_TRACKS.length) return;
+				const prev = (currentIdx - 1 + FLAT_TRACKS.length) % FLAT_TRACKS.length;
+				loadAndPlay(prev);
+			}
+
+			/* ── Wire up controls ─────────────────────────────────────────── */
+			document.getElementById("pb-play").onclick = togglePlay;
+			document.getElementById("pb-next").onclick = playNext;
+			document.getElementById("pb-prev").onclick = playPrev;
+			document.getElementById("play-all-btn").onclick = () => {
+				if (FLAT_TRACKS.length) loadAndPlay(0);
+			};
+
+			const seekWrap = document.getElementById("pb-seek-wrap");
+			seekWrap.addEventListener("click", (e) => {
+				if (!ytReady || currentIdx < 0) return;
+				const r = seekWrap.getBoundingClientRect();
+				const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+				const dur = ytPlayer.getDuration() || 0;
+				ytPlayer.seekTo(pct * dur, true);
+				updateSeekUI(pct * dur, dur);
+			});
+
+			const volSlider = document.getElementById("pb-vol-slider");
+			volSlider.addEventListener("input", () => {
+				const v = parseInt(volSlider.value, 10);
+				lastVolume = v;
+				isMuted = v === 0;
+				volSlider.style.setProperty("--vol", v + "%");
+				if (ytReady) ytPlayer.setVolume(v);
+				updateVolIcon();
+			});
+			document.getElementById("pb-mute").onclick = () => {
+				isMuted = !isMuted;
+				if (ytReady) {
+					if (isMuted) ytPlayer.setVolume(0);
+					else ytPlayer.setVolume(lastVolume || 80);
+				}
+				volSlider.value = isMuted ? 0 : lastVolume || 80;
+				volSlider.style.setProperty("--vol", volSlider.value + "%");
+				updateVolIcon();
+			};
+			function updateVolIcon() {
+				document
+					.getElementById("pb-vol-path")
+					.setAttribute(
+						"d",
+						isMuted || parseInt(volSlider.value, 10) === 0
+							? "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"
+							: "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z",
+					);
+			}
+
+			window.addEventListener("scroll", () => {
+				document
+					.getElementById("topbar")
+					.classList.toggle("scrolled", window.scrollY > 40);
+			});
+
+			buildBrand();
+			buildHero();
+			buildSidebarLinks();
+			buildTrackList();
+			volSlider.style.setProperty("--vol", "80%");
+			eagerResolveAll();
+		</script>
+	</body>
+</html>
